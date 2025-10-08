@@ -1,0 +1,34 @@
+import dotenv from "dotenv";
+import express, { Request, Response } from "express";
+import { PrismaClient } from "./generated/prisma";
+import productRouter from "./routes/product.routes";
+
+dotenv.config();
+
+const server = express();
+const prisma = new PrismaClient();
+const PORT = process.env.PORT || 3000;
+
+server.use(express.json());
+
+server.use("/api/product", productRouter);
+
+server.get("/", (req: Request, res: Response) => {
+  res.status(200).send("Data Dashboard API is running");
+});
+
+async function main() {
+  try {
+    await prisma.$connect();
+    console.log(`Successfully connected to the database`);
+
+    server.listen(PORT, () => {
+      console.log(`Server is listening on: "http://localhost:${PORT}"`);
+    });
+  } catch (error) {
+    console.error("Failed to connect to the database", error);
+    process.exit(1);
+  }
+}
+
+main();
