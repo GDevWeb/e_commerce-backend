@@ -139,7 +139,7 @@ export const updateProduct = async (
       return;
     }
 
-    const existingProduct = await productService.deleteProduct(productId);
+    const existingProduct = await productService.getProductById(productId);
 
     if (!existingProduct) {
       res.status(404).json({ message: "Product not found" });
