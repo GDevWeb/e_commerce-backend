@@ -22,10 +22,18 @@ export const createProduct = async (
   return prisma.product.create({ data });
 };
 
-export const deleteProduct = async (id: number): Promise<Product> => {
-  return prisma.product.delete({
-    where: { id },
-  });
+export const deleteProduct = async (id: number): Promise<Product | null> => {
+  try {
+    return await prisma.product.delete({ where: { id } });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return null;
+    }
+    throw error;
+  }
 };
 
 export const updateProduct = async (
