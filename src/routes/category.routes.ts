@@ -6,9 +6,6 @@ import {
   getCategory,
   updateCategory,
 } from "../controllers/category.controller";
-import { PrismaClient } from "../generated/prisma";
-
-const prisma = new PrismaClient();
 
 const categoryRouter = express.Router();
 

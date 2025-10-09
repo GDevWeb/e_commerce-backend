@@ -88,11 +88,18 @@ export const deleteCategory = async (
         .json({ message: "Category ID must be a positive number" });
       return;
     }
-    const deleteCategory = await categoryService.deleteCategory(categoryId);
+    const category = await categoryService.deleteCategory(categoryId);
+
+    if (!category) {
+      res.status(404).json({
+        message: `Category with ID ${categoryId} not found`,
+      });
+      return;
+    }
 
     res.status(200).json({
       message: `Category with ID ${categoryId} deleted successfully`,
-      deleteCategory,
+      category,
     });
   } catch (error) {
     console.error("Error deleting category:", error);

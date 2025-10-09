@@ -22,8 +22,18 @@ export const createCategory = async (
   return prisma.category.create({ data });
 };
 
-export const deleteCategory = async (id: number): Promise<Category> => {
-  return prisma.category.delete({ where: { id } });
+export const deleteCategory = async (id: number): Promise<Category | null> => {
+  try {
+    return await prisma.category.delete({ where: { id } });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return null;
+    }
+    throw error;
+  }
 };
 
 export const updateCategory = async (

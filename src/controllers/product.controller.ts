@@ -103,23 +103,27 @@ export const createProduct = async (
   }
 };
 
-export const deleteProduct = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const productId = Number(req.params.productId);
 
     if (isNaN(productId) || productId <= 0) {
-      res.status(400).json({ message: "Product ID must be a positive number" });
+      res.status(400).json({ message: "Brand ID must be a positive number" });
       return;
     }
 
-    const deletedProduct = await productService.deleteProduct(productId);
+    const product = await productService.deleteProduct(productId);
+
+    if (!product) {
+      res.status(404).json({
+        message: `Product with ID ${productId} not found`,
+      });
+      return;
+    }
 
     res.status(200).json({
       message: `Product with ID ${productId} deleted successfully`,
-      deletedProduct,
+      product,
     });
   } catch (error) {
     console.error("Error deleting product:", error);
