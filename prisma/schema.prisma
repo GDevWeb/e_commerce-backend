@@ -27,6 +27,11 @@ model Customer {
   reviews           Review[]
 }
 
+model Brand {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  products Product[]
+}
 model Category {
   id        Int      @id @default(autoincrement())
   name      String   @unique
@@ -37,13 +42,14 @@ model Product {
   id              Int      @id @default(autoincrement())
   name            String
   category_id     Int
+  brand_id        Int      @default(1)
   price           Float
   stock_quantity  Int
   category        Category @relation(fields: [category_id], references: [id])
+  brand           Brand    @relation(fields: [brand_id], references: [id])
   orders          Order[]
   reviews         Review[]
 }
-
 model Order {
   id          Int      @id @default(autoincrement())
   product_id  Int
@@ -67,4 +73,3 @@ model Review {
   customer    Customer @relation(fields: [customer_id], references: [id])
 }
 
-// create seed data for product
