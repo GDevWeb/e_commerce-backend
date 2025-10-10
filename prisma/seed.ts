@@ -82,6 +82,7 @@ async function main() {
       stock_quantity: 50,
       brand: { connect: { id: logitech.id } },
       category: { connect: { id: keyboards.id } },
+      sku: "LOGIGPROKEY001",
     },
     {
       name: "Apple MacBook Pro M3",
@@ -89,6 +90,7 @@ async function main() {
       stock_quantity: 20,
       brand: { connect: { id: apple.id } },
       category: { connect: { id: laptops.id } },
+      sku: "APPLEMBOOKM3001",
     },
     {
       name: "Dell XPS 15",
@@ -96,6 +98,7 @@ async function main() {
       stock_quantity: 15,
       brand: { connect: { id: dell.id } },
       category: { connect: { id: laptops.id } },
+      sku: "DELXPS15001",
     },
     {
       name: "Samsung 4K Monitor",
@@ -103,6 +106,7 @@ async function main() {
       stock_quantity: 30,
       brand: { connect: { id: samsung.id } },
       category: { connect: { id: monitors.id } },
+      sku: "SAM4KMON001",
     },
   ];
 

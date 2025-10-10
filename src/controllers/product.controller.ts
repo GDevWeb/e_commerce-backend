@@ -94,6 +94,7 @@ export const createProduct = async (
       price: data.price,
       stock_quantity: data.stock_quantity,
       category: { connect: { id: data.category_id } },
+      sku: "",
     });
 
     res.status(201).json(newProduct);
