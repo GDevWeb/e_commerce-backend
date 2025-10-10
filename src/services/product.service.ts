@@ -2,11 +2,18 @@ import { Prisma, PrismaClient, Product } from "../generated/prisma";
 
 const prisma = new PrismaClient();
 
-export const getAllProducts = async (): Promise<Product[]> => {
+export const getAllProducts = async (
+  page: number = 1,
+  pageSize: number = 10
+): Promise<Product[]> => {
+  const skip = (page - 1) * pageSize;
   return prisma.product.findMany({
     include: {
       category: true,
+      brand: true,
     },
+    skip,
+    take: pageSize,
   });
 };
 

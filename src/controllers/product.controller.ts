@@ -5,9 +5,12 @@ import * as productService from "../services/product.service";
 export const getAllProducts = async (
   req: Request,
   res: Response
-): Promise<Product[] | undefined> => {
+): Promise<void> => {
+  const page = parseInt(req.query.page as string) || 1;
+  const pageSize = parseInt(req.query.pageSize as string) || 10;
+
   try {
-    const products = await productService.getAllProducts();
+    const products = await productService.getAllProducts(page, pageSize);
 
     if (products.length === 0) {
       res.status(404).json({ message: "No products found" });
