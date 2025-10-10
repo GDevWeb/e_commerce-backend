@@ -52,3 +52,10 @@ export const updateProduct = async (
     data,
   });
 };
+
+/* ***Searching and Filtering ***/
+
+// const searchingProduct = (
+//   req: Request,
+//   res: Response
+// ): Promise<Product | null> => {};

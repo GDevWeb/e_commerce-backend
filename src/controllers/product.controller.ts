@@ -213,3 +213,10 @@ export const updateProduct = async (
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+/* ***Searching and Filtering ***/
+
+// const searchingProduct = (
+//   req: Request,
+//   res: Response
+// ): Promise<Product | null> => {};
