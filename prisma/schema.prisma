@@ -41,6 +41,10 @@ model Category {
 model Product {
   id              Int      @id @default(autoincrement())
   name            String
+  sku             String   @unique //stock keeping unit
+  imageUrl        String?
+  description     String?
+  weight          Float?
   category_id     Int
   brand_id        Int      @default(1)
   price           Float
