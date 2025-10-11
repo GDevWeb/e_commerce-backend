@@ -5,9 +5,21 @@ import * as productService from "../services/product.service";
 export const getAllProducts = async (
   req: Request,
   res: Response
-): Promise<Product[] | undefined> => {
+): Promise<void> => {
+  const page = parseInt(req.query.page as string) || 1;
+  const pageSize = parseInt(req.query.pageSize as string) || 10;
+  const filters = {
+    name: req.query.name as string,
+    category: req.query.category as string,
+    brand: req.query.brand as string,
+  };
+
   try {
-    const products = await productService.getAllProducts();
+    const products = await productService.getAllProducts(
+      page,
+      pageSize,
+      filters
+    );
 
     if (products.length === 0) {
       res.status(404).json({ message: "No products found" });
@@ -94,6 +106,7 @@ export const createProduct = async (
       price: data.price,
       stock_quantity: data.stock_quantity,
       category: { connect: { id: data.category_id } },
+      sku: "",
     });
 
     res.status(201).json(newProduct);
@@ -103,23 +116,27 @@ export const createProduct = async (
   }
 };
 
-export const deleteProduct = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const productId = Number(req.params.productId);
 
     if (isNaN(productId) || productId <= 0) {
-      res.status(400).json({ message: "Product ID must be a positive number" });
+      res.status(400).json({ message: "Brand ID must be a positive number" });
       return;
     }
 
-    const deletedProduct = await productService.deleteProduct(productId);
+    const product = await productService.deleteProduct(productId);
+
+    if (!product) {
+      res.status(404).json({
+        message: `Product with ID ${productId} not found`,
+      });
+      return;
+    }
 
     res.status(200).json({
       message: `Product with ID ${productId} deleted successfully`,
-      deletedProduct,
+      product,
     });
   } catch (error) {
     console.error("Error deleting product:", error);
@@ -139,7 +156,7 @@ export const updateProduct = async (
       return;
     }
 
-    const existingProduct = await productService.deleteProduct(productId);
+    const existingProduct = await productService.getProductById(productId);
 
     if (!existingProduct) {
       res.status(404).json({ message: "Product not found" });

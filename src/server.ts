@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
 import { PrismaClient } from "./generated/prisma";
+import brandRouter from "./routes/brand.routes";
+import categoryRouter from "./routes/category.routes";
 import productRouter from "./routes/product.routes";
 
 dotenv.config();
@@ -12,6 +14,8 @@ const PORT = process.env.PORT || 3000;
 server.use(express.json());
 
 server.use("/api/product", productRouter);
+server.use("/api/category", categoryRouter);
+server.use("/api/brand", brandRouter);
 
 server.get("/", (req: Request, res: Response) => {
   res.status(200).send("Data Dashboard API is running");
