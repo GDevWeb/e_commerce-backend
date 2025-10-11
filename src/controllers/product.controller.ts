@@ -8,9 +8,18 @@ export const getAllProducts = async (
 ): Promise<void> => {
   const page = parseInt(req.query.page as string) || 1;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
+  const filters = {
+    name: req.query.name as string,
+    category: req.query.category as string,
+    brand: req.query.brand as string,
+  };
 
   try {
-    const products = await productService.getAllProducts(page, pageSize);
+    const products = await productService.getAllProducts(
+      page,
+      pageSize,
+      filters
+    );
 
     if (products.length === 0) {
       res.status(404).json({ message: "No products found" });
@@ -213,10 +222,3 @@ export const updateProduct = async (
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-/* ***Searching and Filtering ***/
-
-// const searchingProduct = (
-//   req: Request,
-//   res: Response
-// ): Promise<Product | null> => {};

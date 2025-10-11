@@ -49,10 +49,11 @@ describe("Products Service", () => {
       ];
       prismaMock.product.findMany.mockResolvedValue(mockProducts);
 
-      const products = await productService.getAllProducts(1, 10);
+      const products = await productService.getAllProducts(1, 10, {});
 
       expect(products).toEqual(mockProducts);
       expect(prismaMock.product.findMany).toHaveBeenCalledWith({
+        where: {},
         include: {
           category: true,
           brand: true,
@@ -65,7 +66,7 @@ describe("Products Service", () => {
     test("should return an empty array if no products are found", async () => {
       prismaMock.product.findMany.mockResolvedValue([]);
 
-      const products = await productService.getAllProducts(1, 10);
+      const products = await productService.getAllProducts(1, 10, {});
 
       expect(products).toEqual([]);
       expect(prismaMock.product.findMany).toHaveBeenCalledTimes(1);
@@ -89,16 +90,57 @@ describe("Products Service", () => {
 
       prismaMock.product.findMany.mockResolvedValue(mockProductsPage2);
 
-      const products = await productService.getAllProducts(2, 1);
+      const products = await productService.getAllProducts(2, 1, {});
 
       expect(products).toEqual(mockProductsPage2);
       expect(prismaMock.product.findMany).toHaveBeenCalledWith({
+        where: {},
         include: {
           category: true,
           brand: true,
         },
         skip: 1,
         take: 1,
+      });
+    });
+
+    test("should filter products by name, category, and brand", async () => {
+      const mockFilteredProducts = [
+        {
+          id: 1,
+          name: "Laptop Dell",
+          description: "Gaming laptop",
+          price: 1500,
+          stock_quantity: 5,
+          category_id: 1,
+          brand_id: 1,
+          sku: "L001",
+          category: { id: 1, name: "Electronics" },
+          brand: { id: 1, name: "Dell" },
+        },
+      ];
+
+      prismaMock.product.findMany.mockResolvedValue(mockFilteredProducts);
+
+      const products = await productService.getAllProducts(1, 10, {
+        name: "Laptop",
+        category: "Electronics",
+        brand: "Dell",
+      });
+
+      expect(products).toEqual(mockFilteredProducts);
+      expect(prismaMock.product.findMany).toHaveBeenCalledWith({
+        where: {
+          name: { contains: "Laptop", mode: "insensitive" },
+          category: { name: { contains: "Electronics", mode: "insensitive" } },
+          brand: { name: { contains: "Dell", mode: "insensitive" } },
+        },
+        include: {
+          category: true,
+          brand: true,
+        },
+        skip: 0,
+        take: 10,
       });
     });
   });
