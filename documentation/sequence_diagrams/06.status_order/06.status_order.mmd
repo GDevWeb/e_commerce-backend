@@ -1,0 +1,78 @@
+sequenceDiagram
+    actor Admin
+    participant API as Express API
+    participant AuthMW as Auth Middleware
+    participant RoleMW as Role Middleware
+    participant Controller as OrderController
+    participant Service as OrderService
+    participant EmailService as EmailService
+    participant NotifService as NotificationService
+    participant Prisma as Prisma ORM
+    participant DB as PostgreSQL
+    participant Queue as Job Queue (Bull)
+
+    Admin->>API: PATCH /api/orders/:orderId/status
+    Note over Admin,API: Body: { status: "SHIPPED", tracking_number: "123ABC" }
+    
+    API->>AuthMW: Verify JWT Token
+    alt Token invalide
+        AuthMW-->>Admin: 401 Unauthorized
+    else Token valide
+        AuthMW->>RoleMW: checkRole(['ADMIN', 'MANAGER'])
+        
+        alt Role insuffisant
+            RoleMW-->>Admin: 403 Forbidden
+        else Role OK
+            RoleMW->>Controller: updateOrderStatus(req, res)
+            
+            Controller->>Service: updateOrderStatus(orderId, newStatus)
+            
+            Service->>Prisma: prisma.order.findUnique({ where: { id }, include: { customer } })
+            Prisma->>DB: SELECT * FROM orders WHERE id = ? WITH customer
+            
+            alt Commande non trouvée
+                DB-->>Prisma: null
+                Prisma-->>Service: null
+                Service-->>Controller: OrderNotFoundError
+                Controller-->>Admin: 404 Not Found
+            else Commande trouvée
+                DB-->>Prisma: Order with customer
+                Prisma-->>Service: Order object
+                
+                Service->>Service: validateStatusTransition(currentStatus, newStatus)
+                Note over Service: Ex: PENDING -> CANCELLED (OK)<br/>DELIVERED -> PENDING (NOK)
+                
+                alt Transition invalide
+                    Service-->>Controller: InvalidTransitionError
+                    Controller-->>Admin: 400 Bad Request
+                else Transition valide
+                    Service->>Prisma: prisma.order.update({ where: { id }, data: { status } })
+                    Prisma->>DB: UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?
+                    DB-->>Prisma: Order updated
+                    Prisma-->>Service: Updated order
+                    
+                    par Envoi notifications en parallèle
+                        Service->>Queue: addJob('send-email', { orderId, status })
+                        Queue->>EmailService: processEmailJob(jobData)
+                        EmailService->>EmailService: sendOrderStatusEmail(customer.email, order)
+                        Note over EmailService: Envoi email via SendGrid/Mailgun
+                        EmailService-->>Queue: Email sent
+                    and
+                        Service->>Queue: addJob('send-notification', { orderId, status })
+                        Queue->>NotifService: processNotificationJob(jobData)
+                        NotifService->>NotifService: sendPushNotification(customer.id, message)
+                        Note over NotifService: Push notification via Firebase
+                        NotifService-->>Queue: Notification sent
+                    and
+                        Service->>Prisma: prisma.orderHistory.create({ data: {...} })
+                        Note over Service,Prisma: Log du changement de statut
+                        Prisma->>DB: INSERT INTO order_history (order_id, old_status, new_status, changed_by)
+                        DB-->>Prisma: History created
+                    end
+                    
+                    Service-->>Controller: Updated order
+                    Controller-->>Admin: 200 OK + Order data
+                end
+            end
+        end
+    end

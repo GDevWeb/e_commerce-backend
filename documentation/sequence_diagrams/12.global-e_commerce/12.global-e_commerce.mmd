@@ -1,0 +1,145 @@
+graph TB
+    subgraph Client["CLIENT LAYER"]
+        WebApp["Web Frontend<br/>React/Next.js"]
+        MobileApp["Mobile App<br/>React Native"]
+        AdminApp["Admin Dashboard<br/>React"]
+    end
+
+    subgraph Gateway["API GATEWAY"]
+        LB["Load Balancer<br/>Nginx"]
+    end
+
+    subgraph Application["APPLICATION LAYER"]
+        API["Express API Server"]
+        
+        subgraph Middlewares["Middlewares"]
+            AuthMW["Auth JWT"]
+            RateMW["Rate Limiter"]
+            CorsMW["CORS"]
+            HelmetMW["Helmet Security"]
+        end
+        
+        subgraph Controllers["Controllers"]
+            AuthCtrl["AuthController"]
+            CustomerCtrl["CustomerController"]
+            ProductCtrl["ProductController"]
+            OrderCtrl["OrderController"]
+        end
+        
+        subgraph Services["Business Logic Services"]
+            AuthSvc["AuthService"]
+            CustomerSvc["CustomerService"]
+            ProductSvc["ProductService"]
+            OrderSvc["OrderService"]
+        end
+        
+        subgraph Utils["Utility Services"]
+            EmailSvc["EmailService"]
+            ImageSvc["ImageService"]
+            NotifSvc["NotificationService"]
+        end
+    end
+
+    subgraph Data["DATA LAYER"]
+        ORM["Prisma ORM"]
+        
+        subgraph Cache["Cache Layer"]
+            RedisCache["Redis Cache<br/>Sessions/Cart"]
+            RedisQueue["Redis Queue<br/>Bull/BullMQ"]
+        end
+        
+        subgraph Database["Database"]
+            PostgreSQL["PostgreSQL<br/>Primary DB"]
+        end
+    end
+
+    subgraph External["EXTERNAL SERVICES"]
+        Stripe["Stripe API<br/>Payments"]
+        S3["AWS S3<br/>Images"]
+        Sentry["Sentry<br/>Errors"]
+        SendGrid["SendGrid<br/>Emails"]
+    end
+
+    subgraph Workers["BACKGROUND JOBS"]
+        Worker["Bull Workers"]
+        EmailWorker["Email Worker"]
+        NotifWorker["Notification Worker"]
+    end
+
+    subgraph Monitoring["MONITORING"]
+        Logger["Winston Logger"]
+        Metrics["Grafana Dashboard"]
+    end
+
+    %% Client connections
+    WebApp --> LB
+    MobileApp --> LB
+    AdminApp --> LB
+    
+    LB --> API
+    
+    %% API to Middlewares
+    API --> AuthMW
+    API --> RateMW
+    API --> CorsMW
+    API --> HelmetMW
+    
+    %% Middlewares to Controllers
+    AuthMW --> AuthCtrl
+    AuthMW --> CustomerCtrl
+    AuthMW --> ProductCtrl
+    AuthMW --> OrderCtrl
+    
+    %% Controllers to Services
+    AuthCtrl --> AuthSvc
+    CustomerCtrl --> CustomerSvc
+    ProductCtrl --> ProductSvc
+    OrderCtrl --> OrderSvc
+    
+    %% Services to Utils
+    AuthSvc --> EmailSvc
+    ProductSvc --> ImageSvc
+    OrderSvc --> NotifSvc
+    
+    %% Services to ORM
+    AuthSvc --> ORM
+    CustomerSvc --> ORM
+    ProductSvc --> ORM
+    OrderSvc --> ORM
+    
+    %% ORM to Database
+    ORM --> PostgreSQL
+    ORM --> RedisCache
+    
+    %% Services to Cache
+    OrderSvc --> RedisCache
+    OrderSvc --> RedisQueue
+    
+    %% Queue to Workers
+    RedisQueue --> Worker
+    Worker --> EmailWorker
+    Worker --> NotifWorker
+    
+    %% Workers to External
+    EmailWorker --> SendGrid
+    ImageSvc --> S3
+    OrderSvc --> Stripe
+    
+    %% Monitoring
+    API --> Logger
+    Logger --> Sentry
+    PostgreSQL --> Metrics
+    RedisCache --> Metrics
+    
+    %% Styling
+    classDef clientStyle fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
+    classDef apiStyle fill:#2196F3,stroke:#1565C0,stroke-width:3px,color:#fff
+    classDef dataStyle fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff
+    classDef externalStyle fill:#9C27B0,stroke:#6A1B9A,stroke-width:2px,color:#fff
+    classDef monitorStyle fill:#F44336,stroke:#C62828,stroke-width:2px,color:#fff
+    
+    class WebApp,MobileApp,AdminApp clientStyle
+    class API apiStyle
+    class PostgreSQL,RedisCache dataStyle
+    class Stripe,S3,Sentry,SendGrid externalStyle
+    class Logger,Metrics monitorStyle

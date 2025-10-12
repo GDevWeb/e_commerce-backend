@@ -1,0 +1,201 @@
+sequenceDiagram
+    actor User
+    participant API as Express API
+    participant Route as Route Handler
+    participant Controller as Controller
+    participant Service as Service Layer
+    participant Prisma as Prisma ORM
+    participant DB as PostgreSQL
+    participant ErrorMW as Error Middleware
+    participant Logger as Winston Logger
+    participant Monitor as Sentry/DataDog
+
+    rect rgb(255, 200, 200)
+    Note over User,Monitor: SCÉNARIO 1: Erreur de Validation
+    User->>API: POST /api/customers
+    Note over User,API: Body: { email: "invalid-email" }
+    
+    API->>Route: Route handler
+    Route->>Controller: createCustomer(req, res, next)
+    
+    Controller->>Controller: validateRequest(req.body)
+    Note over Controller: Zod schema validation
+    
+    Controller->>Controller: throw new ValidationError("Invalid email")
+    Controller->>ErrorMW: next(error)
+    
+    ErrorMW->>ErrorMW: identifyErrorType(error)
+    Note over ErrorMW: instanceof ValidationError
+    
+    ErrorMW->>Logger: logger.warn('Validation error', { error, userId })
+    Logger-->>ErrorMW: Logged
+    
+    ErrorMW-->>User: 400 Bad Request<br/>{ error: "ValidationError", message: "Invalid email", field: "email" }
+    end
+
+    rect rgb(255, 220, 200)
+    Note over User,Monitor: SCÉNARIO 2: Erreur Prisma (Constraint)
+    User->>API: POST /api/customers
+    Note over User,API: Body: { email: "existing@email.com", ... }
+    
+    API->>Route: Route handler
+    Route->>Controller: createCustomer(req, res, next)
+    Controller->>Service: createCustomer(data)
+    Service->>Prisma: prisma.customer.create({ data })
+    Prisma->>DB: INSERT INTO customers (...)
+    
+    DB-->>Prisma: ERROR: duplicate key value (email)
+    Prisma->>Prisma: throw PrismaClientKnownRequestError
+    Note over Prisma: error.code = 'P2002'<br/>meta.target = ['email']
+    
+    Prisma->>Service: throws error
+    Service->>Controller: throws error
+    Controller->>ErrorMW: next(error)
+    
+    ErrorMW->>ErrorMW: identifyErrorType(error)
+    Note over ErrorMW: error.code === 'P2002'
+    
+    ErrorMW->>ErrorMW: transformPrismaError(error)
+    Note over ErrorMW: Transform to DuplicateError
+    
+    ErrorMW->>Logger: logger.warn('Duplicate entry', { error })
+    Logger-->>ErrorMW: Logged
+    
+    ErrorMW-->>User: 409 Conflict<br/>{ error: "DuplicateError", message: "Email already exists" }
+    end
+
+    rect rgb(255, 240, 200)
+    Note over User,Monitor: SCÉNARIO 3: Erreur Business Logic
+    User->>API: POST /api/orders
+    Note over User,API: Body: { product_id: 1, quantity: 100 }
+    
+    API->>Route: Route handler
+    Route->>Controller: createOrder(req, res, next)
+    Controller->>Service: createOrder(orderData)
+    
+    Service->>Prisma: prisma.product.findUnique({ where: { id: 1 } })
+    Prisma->>DB: SELECT * FROM products WHERE id = 1
+    DB-->>Prisma: Product { stock_quantity: 10 }
+    Prisma-->>Service: Product object
+    
+    Service->>Service: checkStock(product, quantity)
+    Note over Service: 10 < 100 → Insufficient
+    
+    Service->>Service: throw new OutOfStockError("Only 10 items available")
+    Service->>Controller: throws error
+    Controller->>ErrorMW: next(error)
+    
+    ErrorMW->>ErrorMW: identifyErrorType(error)
+    Note over ErrorMW: instanceof OutOfStockError
+    
+    ErrorMW->>Logger: logger.info('Stock insufficient', { productId, requested, available })
+    Logger-->>ErrorMW: Logged
+    
+    ErrorMW-->>User: 400 Bad Request<br/>{ error: "OutOfStockError", message: "Only 10 items available", available: 10 }
+    end
+
+    rect rgb(255, 200, 220)
+    Note over User,Monitor: SCÉNARIO 4: Erreur 404 Not Found
+    User->>API: GET /api/products/99999
+    
+    API->>Route: Route handler
+    Route->>Controller: getProduct(req, res, next)
+    Controller->>Service: getProductById(99999)
+    
+    Service->>Prisma: prisma.product.findUnique({ where: { id: 99999 } })
+    Prisma->>DB: SELECT * FROM products WHERE id = 99999
+    DB-->>Prisma: null
+    Prisma-->>Service: null
+    
+    Service->>Service: throw new NotFoundError("Product not found")
+    Service->>Controller: throws error
+    Controller->>ErrorMW: next(error)
+    
+    ErrorMW->>ErrorMW: identifyErrorType(error)
+    Note over ErrorMW: instanceof NotFoundError
+    
+    ErrorMW->>Logger: logger.info('Resource not found', { resource: 'Product', id: 99999 })
+    Logger-->>ErrorMW: Logged
+    
+    ErrorMW-->>User: 404 Not Found<br/>{ error: "NotFoundError", message: "Product not found" }
+    end
+
+    rect rgb(255, 180, 180)
+    Note over User,Monitor: SCÉNARIO 5: Erreur Serveur 500 (Critique)
+    User->>API: GET /api/products
+    
+    API->>Route: Route handler
+    Route->>Controller: getProducts(req, res, next)
+    Controller->>Service: getAllProducts()
+    Service->>Prisma: prisma.product.findMany()
+    
+    Prisma->>DB: SELECT * FROM products
+    DB-->>Prisma: Connection timeout / DB down
+    Prisma->>Prisma: throw Error("Connection lost")
+    
+    Prisma->>Service: throws error
+    Service->>Controller: throws error
+    Controller->>ErrorMW: next(error)
+    
+    ErrorMW->>ErrorMW: identifyErrorType(error)
+    Note over ErrorMW: Unknown error → 500
+    
+    ErrorMW->>Logger: logger.error('Critical error', { error, stack, userId, endpoint })
+    Logger-->>ErrorMW: Logged
+    
+    ErrorMW->>Monitor: captureException(error, { user, context })
+    Note over Monitor: Sentry alerte l'équipe
+    Monitor-->>ErrorMW: Error tracked
+    
+    ErrorMW->>ErrorMW: sanitizeError(error)
+    Note over ErrorMW: Ne pas exposer détails techniques
+    
+    ErrorMW-->>User: 500 Internal Server Error<br/>{ error: "ServerError", message: "An unexpected error occurred", requestId: "abc123" }
+    
+    par Notifications asynchrones
+        Monitor->>Monitor: Send alert to Slack
+        Monitor->>Monitor: Create Jira ticket if critical
+        Monitor->>Monitor: Send email to on-call engineer
+    end
+    end
+
+    rect rgb(200, 200, 255)
+    Note over User,Monitor: SCÉNARIO 6: Erreur d'Authentification
+    User->>API: GET /api/orders
+    Note over User,API: Header: Authorization: Bearer invalid_token
+    
+    API->>Route: authMiddleware
+    Route->>Route: jwt.verify(token, SECRET)
+    
+    Route->>Route: throw new UnauthorizedError("Invalid token")
+    Route->>ErrorMW: next(error)
+    
+    ErrorMW->>ErrorMW: identifyErrorType(error)
+    Note over ErrorMW: instanceof UnauthorizedError
+    
+    ErrorMW->>Logger: logger.warn('Unauthorized access', { ip, endpoint })
+    Logger-->>ErrorMW: Logged
+    
+    ErrorMW-->>User: 401 Unauthorized<br/>{ error: "UnauthorizedError", message: "Invalid or expired token" }
+    end
+
+    rect rgb(220, 200, 255)
+    Note over User,Monitor: SCÉNARIO 7: Rate Limiting
+    User->>API: POST /api/auth/login (11th request in 1 min)
+    
+    API->>Route: rateLimitMiddleware
+    Route->>Route: checkRateLimit(userId, endpoint)
+    Note over Route: Max: 10 req/min
+    
+    Route->>Route: throw new RateLimitError("Too many requests")
+    Route->>ErrorMW: next(error)
+    
+    ErrorMW->>ErrorMW: identifyErrorType(error)
+    Note over ErrorMW: instanceof RateLimitError
+    
+    ErrorMW->>Logger: logger.warn('Rate limit exceeded', { userId, endpoint })
+    Logger-->>ErrorMW: Logged
+    
+    ErrorMW-->>User: 429 Too Many Requests<br/>{ error: "RateLimitError", message: "Too many requests", retryAfter: 45 }
+    Note over User: Header: Retry-After: 45
+    end

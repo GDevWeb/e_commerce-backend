@@ -1,0 +1,61 @@
+sequenceDiagram
+    actor Client
+    participant API as Express API
+    participant AuthMW as Auth Middleware
+    participant Controller as OrderController
+    participant Service as OrderService
+    participant ProductService as ProductService
+    participant Prisma as Prisma ORM
+    participant DB as PostgreSQL
+
+    Client->>API: POST /api/orders
+    Note over Client,API: Body: { customer_id, items: [{product_id, quantity}] }
+    
+    API->>AuthMW: Verify JWT Token
+    alt Token invalide
+        AuthMW-->>Client: 401 Unauthorized
+    else Token valide
+        AuthMW->>Controller: createOrder(req, res)
+        
+        Controller->>Service: createOrder(orderData)
+        
+        loop Pour chaque item
+            Service->>ProductService: getProduct(product_id)
+            ProductService->>Prisma: prisma.product.findUnique()
+            Prisma->>DB: SELECT * FROM products WHERE id = ?
+            DB-->>Prisma: Product data
+            Prisma-->>ProductService: Product object
+            ProductService-->>Service: Product object
+            
+            alt Stock insuffisant
+                Service-->>Controller: OutOfStockError
+                Controller-->>Client: 400 Bad Request (Stock insuffisant)
+            end
+        end
+        
+        Note over Service: Calcul du total
+        Service->>Service: calculateTotal(items)
+        
+        Service->>Prisma: prisma.$transaction([...])
+        Note over Prisma,DB: Transaction START
+        
+        Prisma->>DB: INSERT INTO orders (customer_id, total, status)
+        DB-->>Prisma: Order created (id: 1)
+        
+        loop Pour chaque item
+            Prisma->>DB: INSERT INTO order_items (order_id, product_id, quantity, price)
+            DB-->>Prisma: OrderItem created
+            
+            Prisma->>DB: UPDATE products SET stock_quantity = stock_quantity - ?
+            DB-->>Prisma: Stock updated
+        end
+        
+        Prisma->>DB: UPDATE customers SET total_orders++, total_spent += total
+        DB-->>Prisma: Customer updated
+        
+        Note over Prisma,DB: Transaction COMMIT
+        
+        Prisma-->>Service: Order + OrderItems
+        Service-->>Controller: Complete order data
+        Controller-->>Client: 201 Created + Order data
+    end
