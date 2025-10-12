@@ -1,0 +1,133 @@
+sequenceDiagram
+    actor Customer
+    participant Frontend as Frontend App
+    participant API as Express API
+    participant Controller as PaymentController
+    participant Service as PaymentService
+    participant Stripe as Stripe API
+    participant Prisma as Prisma ORM
+    participant DB as PostgreSQL
+    participant Webhook as Webhook Handler
+
+    rect rgb(200, 220, 250)
+    Note over Customer,DB: ÉTAPE 1: Création PaymentIntent
+    Customer->>Frontend: Click "Payer"
+    Frontend->>API: POST /api/payments/create-intent
+    Note over Frontend,API: Body: { order_id: 123 }
+    
+    API->>Controller: createPaymentIntent(req, res)
+    Controller->>Service: createIntent(orderId, userId)
+    
+    Service->>Prisma: prisma.order.findUnique({ where: { id, customer_id } })
+    Prisma->>DB: SELECT * FROM orders WHERE id = ? AND customer_id = ?
+    
+    alt Commande non trouvée ou non autorisée
+        DB-->>Prisma: null
+        Prisma-->>Service: null
+        Service-->>Controller: OrderNotFoundError
+        Controller-->>Frontend: 404 Not Found
+    else Commande valide
+        DB-->>Prisma: Order data
+        Prisma-->>Service: Order object
+        
+        Service->>Service: validateOrderCanBePaid(order)
+        Note over Service: Vérifie: status = PENDING, non payée
+        
+        alt Déjà payée ou invalide
+            Service-->>Controller: OrderInvalidStateError
+            Controller-->>Frontend: 400 Bad Request
+        else OK pour paiement
+            Service->>Stripe: stripe.paymentIntents.create({...})
+            Note over Service,Stripe: amount: 12999 (129.99€ en centimes)<br/>currency: 'eur'<br/>metadata: { order_id: 123 }
+            
+            Stripe-->>Service: PaymentIntent { id, client_secret }
+            
+            Service->>Prisma: prisma.payment.create({ data: {...} })
+            Prisma->>DB: INSERT INTO payments (order_id, stripe_intent_id, amount, status)
+            DB-->>Prisma: Payment created
+            
+            Service-->>Controller: { client_secret, payment_id }
+            Controller-->>Frontend: 200 OK + { client_secret }
+            
+            Frontend->>Frontend: stripe.confirmCardPayment(clientSecret, {card})
+            Note over Frontend: Affiche formulaire Stripe Elements
+        end
+    end
+    end
+
+    rect rgb(250, 220, 200)
+    Note over Customer,Stripe: ÉTAPE 2: Customer saisit carte
+    Customer->>Frontend: Saisit numéro carte
+    Frontend->>Stripe: confirmCardPayment(client_secret, payment_method)
+    Note over Stripe: Traitement sécurisé côté Stripe
+    
+    alt Carte refusée
+        Stripe-->>Frontend: Error { code: 'card_declined' }
+        Frontend-->>Customer: Message d'erreur
+    else Paiement réussi
+        Stripe-->>Frontend: PaymentIntent { status: 'succeeded' }
+        Frontend-->>Customer: "Paiement en cours..."
+    end
+    end
+
+    rect rgb(220, 250, 220)
+    Note over Webhook,DB: ÉTAPE 3: Webhook Stripe (Asynchrone)
+    Stripe->>Webhook: POST /api/webhooks/stripe
+    Note over Stripe,Webhook: Event: payment_intent.succeeded<br/>Signature: stripe-signature header
+    
+    Webhook->>Webhook: verifyWebhookSignature(req)
+    
+    alt Signature invalide
+        Webhook-->>Stripe: 400 Bad Request
+    else Signature valide
+        Webhook->>Webhook: extractEventData(event)
+        
+        alt Event type: payment_intent.succeeded
+            Webhook->>Service: handlePaymentSuccess(paymentIntentId)
+            
+            Service->>Prisma: prisma.payment.findUnique({ where: { stripe_intent_id } })
+            Prisma->>DB: SELECT * FROM payments WHERE stripe_intent_id = ?
+            DB-->>Prisma: Payment data
+            Prisma-->>Service: Payment object
+            
+            Service->>Prisma: prisma.$transaction([...])
+            Note over Prisma,DB: Transaction START
+            
+            Prisma->>DB: UPDATE payments SET status = 'COMPLETED', paid_at = NOW()
+            Prisma->>DB: UPDATE orders SET status = 'PROCESSING', payment_status = 'PAID'
+            Prisma->>DB: UPDATE customers SET last_purchase_date = NOW()
+            
+            Note over Prisma,DB: Transaction COMMIT
+            
+            Service->>Service: sendConfirmationEmail(order)
+            Service->>Service: createInvoice(order)
+            
+            Service-->>Webhook: Success
+            Webhook-->>Stripe: 200 OK
+        else Event type: payment_intent.payment_failed
+            Webhook->>Service: handlePaymentFailure(paymentIntentId)
+            Service->>Prisma: prisma.payment.update({ where: {...}, data: { status: 'FAILED' } })
+            Prisma->>DB: UPDATE payments SET status = 'FAILED'
+            
+            Service->>Service: notifyCustomerOfFailure(order)
+            Service-->>Webhook: Success
+            Webhook-->>Stripe: 200 OK
+        end
+    end
+    end
+
+    rect rgb(250, 250, 200)
+    Note over Customer,DB: ÉTAPE 4: Vérification Frontend
+    Frontend->>API: GET /api/orders/123/payment-status
+    API->>Controller: getPaymentStatus(req, res)
+    Controller->>Service: getOrderPaymentStatus(orderId)
+    
+    Service->>Prisma: prisma.order.findUnique({ where: { id }, include: { payment } })
+    Prisma->>DB: SELECT * FROM orders o JOIN payments p WHERE o.id = ?
+    DB-->>Prisma: Order with payment
+    Prisma-->>Service: Order data
+    
+    Service-->>Controller: Payment status
+    Controller-->>Frontend: 200 OK + { status: 'COMPLETED' }
+    Frontend-->>Customer: "Paiement confirmé! 🎉"
+    end

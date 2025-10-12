@@ -1,0 +1,116 @@
+sequenceDiagram
+    actor Admin
+    participant Frontend as Admin Dashboard
+    participant API as Express API
+    participant AuthMW as Auth Middleware
+    participant Upload as Multer Middleware
+    participant Controller as ProductController
+    participant Service as ProductService
+    participant ImageService as ImageService
+    participant Sharp as Sharp (Image Processing)
+    participant S3 as AWS S3 / Cloudinary
+    participant Prisma as Prisma ORM
+    participant DB as PostgreSQL
+
+    Admin->>Frontend: Select image + Fill form
+    Note over Admin,Frontend: Image: product.jpg (5MB)
+    
+    Frontend->>API: POST /api/products/:id/images
+    Note over Frontend,API: Content-Type: multipart/form-data<br/>Body: FormData with image file
+    
+    API->>AuthMW: Verify JWT Token + Check ADMIN role
+    
+    alt Non autorisé
+        AuthMW-->>Frontend: 401/403
+    else Autorisé
+        AuthMW->>Upload: multer.single('image')
+        
+        Upload->>Upload: validateFileType(file)
+        Note over Upload: Accept: .jpg, .jpeg, .png, .webp
+        
+        alt Type invalide
+            Upload-->>Frontend: 400 Bad Request (Format non supporté)
+        else Type valide
+            Upload->>Upload: validateFileSize(file)
+            Note over Upload: Max size: 5MB
+            
+            alt Taille dépassée
+                Upload-->>Frontend: 413 Payload Too Large
+            else Taille OK
+                Upload->>Upload: saveToTemp(/tmp/uploads/)
+                Note over Upload: File saved temporarily
+                Upload-->>Controller: req.file available
+                
+                Controller->>Service: uploadProductImage(productId, file)
+                
+                Service->>Prisma: prisma.product.findUnique({ where: { id } })
+                Prisma->>DB: SELECT * FROM products WHERE id = ?
+                
+                alt Produit non trouvé
+                    DB-->>Prisma: null
+                    Service->>Service: fs.unlinkSync(tempFile)
+                    Service-->>Controller: ProductNotFoundError
+                    Controller-->>Frontend: 404 Not Found
+                else Produit existe
+                    DB-->>Prisma: Product data
+                    Prisma-->>Service: Product object
+                    
+                    Service->>ImageService: processAndUpload(file, productId)
+                    
+                    par Traitement parallèle des variantes
+                        ImageService->>Sharp: resize(1200, 1200).webp()
+                        Note over Sharp: Variant: large (1200x1200)
+                        Sharp-->>ImageService: Buffer (large)
+                        
+                        ImageService->>S3: putObject('products/123/large.webp', buffer)
+                        S3-->>ImageService: URL: https://cdn.../large.webp
+                    and
+                        ImageService->>Sharp: resize(600, 600).webp()
+                        Note over Sharp: Variant: medium (600x600)
+                        Sharp-->>ImageService: Buffer (medium)
+                        
+                        ImageService->>S3: putObject('products/123/medium.webp', buffer)
+                        S3-->>ImageService: URL: https://cdn.../medium.webp
+                    and
+                        ImageService->>Sharp: resize(300, 300).webp()
+                        Note over Sharp: Variant: thumbnail (300x300)
+                        Sharp-->>ImageService: Buffer (thumbnail)
+                        
+                        ImageService->>S3: putObject('products/123/thumb.webp', buffer)
+                        S3-->>ImageService: URL: https://cdn.../thumb.webp
+                    end
+                    
+                    ImageService->>ImageService: fs.unlinkSync(tempFile)
+                    Note over ImageService: Nettoyer fichier temporaire
+                    
+                    ImageService-->>Service: Image URLs object
+                    
+                    Service->>Prisma: prisma.productImage.create({ data: {...} })
+                    Note over Service,Prisma: Stocke les 3 URLs + metadata
+                    Prisma->>DB: INSERT INTO product_images (product_id, url_large, url_medium, url_thumb, size, format)
+                    DB-->>Prisma: Image record created
+                    
+                    alt Ancienne image existe
+                        Service->>Prisma: prisma.productImage.findMany({ where: { product_id, is_primary: true } })
+                        Prisma->>DB: SELECT * FROM product_images WHERE product_id = ? AND is_primary = true
+                        DB-->>Prisma: Old image
+                        
+                        Service->>S3: deleteObjects([old URLs])
+                        Note over S3: Supprime anciennes images
+                        S3-->>Service: Deleted
+                        
+                        Service->>Prisma: prisma.productImage.delete({ where: { id: oldImageId } })
+                        Prisma->>DB: DELETE FROM product_images WHERE id = ?
+                    end
+                    
+                    Service->>Prisma: prisma.product.update({ data: { image_url: largeURL } })
+                    Prisma->>DB: UPDATE products SET image_url = ?
+                    DB-->>Prisma: Product updated
+                    
+                    Service-->>Controller: Image data
+                    Controller-->>Frontend: 201 Created + { image_urls, metadata }
+                    Frontend-->>Admin: Image preview displayed
+                end
+            end
+        end
+    end

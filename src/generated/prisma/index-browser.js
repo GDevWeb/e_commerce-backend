@@ -134,17 +134,22 @@ exports.Prisma.CustomerScalarFieldEnum = {
   total_spent: 'total_spent',
   customer_type: 'customer_type',
   preferred_contact_method: 'preferred_contact_method',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.BrandScalarFieldEnum = {
   id: 'id',
-  name: 'name'
+  name: 'name',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.CategoryScalarFieldEnum = {
   id: 'id',
-  name: 'name'
+  name: 'name',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.ProductScalarFieldEnum = {
@@ -154,20 +159,32 @@ exports.Prisma.ProductScalarFieldEnum = {
   imageUrl: 'imageUrl',
   description: 'description',
   weight: 'weight',
+  price: 'price',
+  stock_quantity: 'stock_quantity',
   category_id: 'category_id',
   brand_id: 'brand_id',
-  price: 'price',
-  stock_quantity: 'stock_quantity'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.OrderScalarFieldEnum = {
   id: 'id',
-  product_id: 'product_id',
   customer_id: 'customer_id',
   order_date: 'order_date',
+  status: 'status',
+  total: 'total',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.OrderItemScalarFieldEnum = {
+  id: 'id',
+  order_id: 'order_id',
+  product_id: 'product_id',
   quantity: 'quantity',
   price: 'price',
-  order_status: 'order_status'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.ReviewScalarFieldEnum = {
@@ -175,8 +192,9 @@ exports.Prisma.ReviewScalarFieldEnum = {
   product_id: 'product_id',
   customer_id: 'customer_id',
   rating: 'rating',
-  comments: 'comments',
-  createdAt: 'createdAt'
+  comment: 'comment',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -193,7 +211,46 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
+exports.CustomerType = exports.$Enums.CustomerType = {
+  STANDARD: 'STANDARD',
+  SILVER: 'SILVER',
+  GOLD: 'GOLD',
+  PLATINUM: 'PLATINUM',
+  VIP: 'VIP'
+};
 
+exports.ContactMethod = exports.$Enums.ContactMethod = {
+  EMAIL: 'EMAIL',
+  PHONE: 'PHONE',
+  SMS: 'SMS',
+  WHATSAPP: 'WHATSAPP'
+};
+
+exports.CategoryType = exports.$Enums.CategoryType = {
+  ELECTRONICS: 'ELECTRONICS',
+  CLOTHING: 'CLOTHING',
+  BOOKS: 'BOOKS',
+  HOME_APPLIANCES: 'HOME_APPLIANCES',
+  SPORTS: 'SPORTS',
+  OUTDOORS: 'OUTDOORS',
+  TOYS: 'TOYS',
+  GAMES: 'GAMES',
+  FOOD: 'FOOD',
+  DRINKS: 'DRINKS',
+  HEALTH: 'HEALTH',
+  BEAUTY: 'BEAUTY',
+  AUTOMOTIVE: 'AUTOMOTIVE',
+  INDUSTRIAL: 'INDUSTRIAL'
+};
+
+exports.OrderStatus = exports.$Enums.OrderStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  SHIPPED: 'SHIPPED',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED',
+  REFUNDED: 'REFUNDED'
+};
 
 exports.Prisma.ModelName = {
   Customer: 'Customer',
@@ -201,6 +258,7 @@ exports.Prisma.ModelName = {
   Category: 'Category',
   Product: 'Product',
   Order: 'Order',
+  OrderItem: 'OrderItem',
   Review: 'Review'
 };
 

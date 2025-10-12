@@ -5,7 +5,7 @@ import * as productService from "../services/product.service";
 export const getAllProducts = async (
   req: Request,
   res: Response
-): Promise<void> => {
+): Promise<Product[] | void> => {
   const page = parseInt(req.query.page as string) || 1;
   const pageSize = parseInt(req.query.pageSize as string) || 10;
   const filters = {

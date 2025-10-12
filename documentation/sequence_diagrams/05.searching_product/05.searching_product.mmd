@@ -1,0 +1,52 @@
+sequenceDiagram
+    actor User
+    participant API as Express API
+    participant Controller as ProductController
+    participant Service as ProductService
+    participant Cache as Redis Cache
+    participant Prisma as Prisma ORM
+    participant DB as PostgreSQL
+
+    User->>API: GET /api/products?category=ELECTRONICS&minPrice=100&maxPrice=1000&page=1
+    
+    API->>Controller: getProducts(req, res)
+    Note over Controller: Extract query params
+    
+    Controller->>Service: searchProducts(filters, pagination)
+    
+    Service->>Service: generateCacheKey(filters)
+    Note over Service: Key: "products:ELECTRONICS:100:1000:page1"
+    
+    Service->>Cache: get(cacheKey)
+    
+    alt Cache HIT
+        Cache-->>Service: Cached products data
+        Service-->>Controller: Products from cache
+        Note over Controller,Service: Response ultra-rapide (< 10ms)
+        Controller-->>User: 200 OK + Products (from cache)
+    else Cache MISS
+        Cache-->>Service: null
+        
+        Service->>Prisma: prisma.product.findMany({ where: {...}, include: {...} })
+        Note over Prisma: WHERE category_id = ? AND price BETWEEN ? AND ?
+        
+        Prisma->>DB: SELECT p.*, c.name as category, b.name as brand<br/>FROM products p<br/>JOIN categories c ON p.category_id = c.id<br/>JOIN brands b ON p.brand_id = b.id<br/>WHERE c.name = 'ELECTRONICS'<br/>AND p.price >= 100 AND p.price <= 1000<br/>LIMIT 20 OFFSET 0
+        
+        DB-->>Prisma: Products result set
+        Prisma-->>Service: Products with relations
+        
+        Service->>Cache: set(cacheKey, products, ttl: 300)
+        Note over Cache: Cache pendant 5 minutes
+        Cache-->>Service: OK
+        
+        Service->>Prisma: prisma.product.count({ where: {...} })
+        Prisma->>DB: SELECT COUNT(*) FROM products WHERE ...
+        DB-->>Prisma: total: 45
+        Prisma-->>Service: total count
+        
+        Service->>Service: buildPaginationMeta(total, page, limit)
+        Note over Service: { page: 1, limit: 20, total: 45, totalPages: 3 }
+        
+        Service-->>Controller: { products, pagination }
+        Controller-->>User: 200 OK + { data: products, meta: pagination }
+    end
