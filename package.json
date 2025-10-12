@@ -8,9 +8,17 @@
     "build": "npx tsc",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
-    "prisma:migrate": "npx prisma migrate dev",
-    "prisma:generate": "npx prisma generate",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:seed:products": "ts-node prisma/seed-products.ts",
+    "prisma:seed:customers": "ts-node prisma/seed-customers.ts",
+    "prisma:seed:orders": "ts-node prisma/seed-orders.ts",
+    "prisma:seed:reviews": "ts-node prisma/seed-reviews.ts"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
   "author": "",

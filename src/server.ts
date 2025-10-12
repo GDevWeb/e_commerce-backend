@@ -3,6 +3,7 @@ import express, { Request, Response } from "express";
 import { PrismaClient } from "./generated/prisma";
 import brandRouter from "./routes/brand.routes";
 import categoryRouter from "./routes/category.routes";
+import customerRouter from "./routes/customer.routes";
 import productRouter from "./routes/product.routes";
 
 dotenv.config();
@@ -16,6 +17,7 @@ server.use(express.json());
 server.use("/api/product", productRouter);
 server.use("/api/category", categoryRouter);
 server.use("/api/brand", brandRouter);
+server.use("/api/customer", customerRouter);
 
 server.get("/", (req: Request, res: Response) => {
   res.status(200).send("Data Dashboard API is running");
@@ -36,5 +38,3 @@ async function main() {
 }
 
 main();
-
-// init repo2
