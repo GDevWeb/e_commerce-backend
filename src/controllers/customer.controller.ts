@@ -28,10 +28,6 @@ export const getCustomer = async (
   try {
     const customerId = parseInt(req.params.id);
 
-    // if (!validateId(customerId, res, "Customer")) {
-    //   return;
-    // }
-
     const customer = await customerService.getCustomerById(customerId);
 
     if (!customer) {
