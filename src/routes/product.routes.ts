@@ -6,6 +6,7 @@ import {
   getProduct,
   updateProduct,
 } from "../controllers/product.controller";
+import upload from "../middlewares/upload.middleware";
 
 const productRouter = express.Router();
 
@@ -16,7 +17,7 @@ productRouter.get("/", getAllProducts);
 productRouter.get("/:productId", getProduct);
 
 // post
-productRouter.post("/", createProduct);
+productRouter.post("/", upload.single("imageUrl"), createProduct);
 
 // delete
 productRouter.delete("/:productId", deleteProduct);
