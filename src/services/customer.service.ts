@@ -4,9 +4,6 @@ const prisma = new PrismaClient();
 
 export const getAllCustomers = async () => {
   return prisma.customer.findMany();
-
-  // 2nd step add pagination
-  // 3rd step add filtering
 };
 
 export const getCustomerById = async (id: number): Promise<Customer | null> => {
@@ -37,17 +34,10 @@ export const deleteCustomer = async (id: number): Promise<Customer | null> => {
 
 export const updateCustomer = async (
   id: number,
-  data: Prisma.CustomerCreateInput
+  data: Prisma.CustomerUpdateInput
 ) => {
-  try {
-    return await prisma.customer.update({ where: { id }, data });
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      return null;
-    }
-    throw error;
-  }
+  return await prisma.customer.update({
+    where: { id },
+    data,
+  });
 };

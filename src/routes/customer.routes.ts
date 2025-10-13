@@ -16,16 +16,12 @@ const customerRouter = express.Router();
 
 customerRouter.get("/", getAllCustomers);
 
-customerRouter.get("/:customerId", getCustomer);
+customerRouter.get("/:id", getCustomer);
 
 customerRouter.post("/", validate(createCustomerSchema), createCustomer);
 
-customerRouter.delete("/:customerId", deleteCustomer);
+customerRouter.delete("/:id", deleteCustomer);
 
-customerRouter.put(
-  "/:customerId",
-  validate(updateCustomerSchema),
-  updateCustomer
-);
+customerRouter.patch("/:id", validate(updateCustomerSchema), updateCustomer);
 
 export default customerRouter;

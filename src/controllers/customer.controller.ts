@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Customer } from "../generated/prisma";
 import * as customerService from "../services/customer.service";
-import { validateId } from "../utils/validation.utils";
+import { handlePrismaError } from "../utils/handlePrismaError";
 
 export const getAllCustomers = async (
   req: Request,
@@ -26,11 +26,11 @@ export const getCustomer = async (
   res: Response
 ): Promise<Customer | void> => {
   try {
-    const customerId = parseInt(req.params.customerId);
+    const customerId = parseInt(req.params.id);
 
-    if (!validateId(customerId, res, "Customer")) {
-      return;
-    }
+    // if (!validateId(customerId, res, "Customer")) {
+    //   return;
+    // }
 
     const customer = await customerService.getCustomerById(customerId);
 
@@ -46,8 +46,6 @@ export const getCustomer = async (
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-import { handlePrismaError } from "../utils/handlePrismaError";
 
 export const createCustomer = async (
   req: Request,
@@ -74,11 +72,7 @@ export const deleteCustomer = async (
   res: Response
 ): Promise<void> => {
   try {
-    const customerId = parseInt(req.params.customerId);
-
-    if (!validateId(customerId, res, "Customer")) {
-      return;
-    }
+    const customerId = parseInt(req.params.id);
 
     const customer = await customerService.deleteCustomer(customerId);
 
@@ -102,93 +96,25 @@ export const deleteCustomer = async (
 export const updateCustomer = async (
   req: Request,
   res: Response
-): Promise<Partial<Customer> | void> => {
+): Promise<void> => {
+  // ← Change aussi le type de retour
   try {
-    const customerId = parseInt(req.params.customerId);
-
-    if (!validateId(customerId, res, "Customer")) {
-      return;
-    }
-
-    const existingCustomer = await customerService.getCustomerById(customerId);
-
-    if (!existingCustomer) {
-      res.status(404).json({ message: "Product not found" });
-      return;
-    }
-
-    const { first_name, last_name, email, phone_number, address } = req.body;
-
-    if (!first_name && !last_name && !email && !phone_number && !address) {
-      res.status(400).json({ message: "No update data provided" });
-      return;
-    }
-
-    if (
-      first_name !== undefined &&
-      (typeof first_name !== "string" || first_name.trim() === "")
-    ) {
-      res
-        .status(400)
-        .json({ message: "First name must be a non-empty string" });
-      return;
-    }
-    if (
-      last_name !== undefined &&
-      (typeof last_name !== "string" || last_name.trim() === "")
-    ) {
-      res.status(400).json({ message: "Last name must be a non-empty string" });
-      return;
-    }
-    if (
-      email !== undefined &&
-      (typeof email !== "string" || !/^\S+@\S+\.\S+$/.test(email))
-    ) {
-      res.status(400).json({ message: "Invalid email format" });
-      return;
-    }
-    if (
-      phone_number !== undefined &&
-      (typeof phone_number !== "string" || phone_number.trim() === "")
-    ) {
-      res
-        .status(400)
-        .json({ message: "Phone number must be a non-empty string" });
-      return;
-    }
-    if (
-      address !== undefined &&
-      (typeof address !== "string" || address.trim() === "")
-    ) {
-      res.status(400).json({ message: "Address must be a non-empty string" });
-      return;
-    }
-
-    const data = {
-      first_name:
-        first_name !== undefined ? first_name : existingCustomer.first_name,
-      last_name:
-        last_name !== undefined ? last_name : existingCustomer.last_name,
-      email: email !== undefined ? email : existingCustomer.email,
-      phone_number:
-        phone_number !== undefined
-          ? phone_number
-          : existingCustomer.phone_number,
-      address: address !== undefined ? address : existingCustomer.address,
-      date_of_birth: existingCustomer.date_of_birth,
-      last_purchase_date: existingCustomer.last_purchase_date,
-      total_orders: existingCustomer.total_orders,
-      total_spent: existingCustomer.total_spent,
-      customer_type: existingCustomer.customer_type,
-      preferred_contact_method: existingCustomer.preferred_contact_method,
-    };
+    const existingCustomer = await customerService.getCustomerById(
+      parseInt(req.params.id)
+    );
+    const customerId = parseInt(req.params.id);
 
     const updatedCustomer = await customerService.updateCustomer(
       customerId,
-      data
+      req.body
     );
+
     res.status(200).json(updatedCustomer);
   } catch (error) {
+    if (handlePrismaError(error, res)) {
+      return;
+    }
+
     console.error("Error updating customer:", error);
     res.status(500).json({ message: "Internal server error" });
   }

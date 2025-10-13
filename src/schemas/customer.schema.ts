@@ -38,17 +38,6 @@ export const createCustomerSchema = z.object({
   }),
 });
 
-// Update
-export const updateCustomerSchema = z.object({
-  params: z.object({
-    body: CustomerSchema.omit({
-      id: true,
-      createdAt: true,
-      updatedAt: true,
-    }).partial(),
-  }),
-});
-
 //URL params
 export const customerIdParamSchema = z.object({
   id: z
@@ -57,6 +46,16 @@ export const customerIdParamSchema = z.object({
       message: "Customer ID must be a valid number",
     })
     .transform(Number),
+});
+
+// Update
+export const updateCustomerSchema = z.object({
+  params: customerIdParamSchema,
+  body: CustomerSchema.omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  }).partial(),
 });
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
