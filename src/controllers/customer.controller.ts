@@ -50,7 +50,7 @@ export const getCustomer = async (
 export const createCustomer = async (
   req: Request,
   res: Response
-): Promise<void> => {
+): Promise<Customer | void> => {
   try {
     const newCustomer = await customerService.createCustomer(req.body);
     res.status(201).json(newCustomer);
@@ -96,12 +96,8 @@ export const deleteCustomer = async (
 export const updateCustomer = async (
   req: Request,
   res: Response
-): Promise<void> => {
-  // ← Change aussi le type de retour
+): Promise<Customer | void> => {
   try {
-    const existingCustomer = await customerService.getCustomerById(
-      parseInt(req.params.id)
-    );
     const customerId = parseInt(req.params.id);
 
     const updatedCustomer = await customerService.updateCustomer(

@@ -6,17 +6,19 @@ import {
   getBrand,
   updateBrand,
 } from "../controllers/brand.controller";
+import { validate } from "../middlewares/validate";
+import { createBrandSchema, updateBrandSchema } from "../schemas/brand.schema";
 
 const brandRouter = express.Router();
 
 brandRouter.get("/", getAllBrands);
 
-brandRouter.get("/:brandId", getBrand);
+brandRouter.get("/:id", getBrand);
 
-brandRouter.post("/", createBrand);
+brandRouter.post("/", validate(createBrandSchema), createBrand);
 
-brandRouter.delete("/:brandId", deleteBrand);
+brandRouter.delete("/:id", deleteBrand);
 
-brandRouter.put("/:brandId", updateBrand);
+brandRouter.patch("/:id", validate(updateBrandSchema), updateBrand);
 
 export default brandRouter;
