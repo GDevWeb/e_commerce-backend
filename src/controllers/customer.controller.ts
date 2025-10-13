@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Customer, Prisma } from "../generated/prisma";
+import { Customer } from "../generated/prisma";
 import * as customerService from "../services/customer.service";
 import { validateId } from "../utils/validation.utils";
 
@@ -47,103 +47,25 @@ export const getCustomer = async (
   }
 };
 
+import { handlePrismaError } from "../utils/handlePrismaError";
+
 export const createCustomer = async (
   req: Request,
   res: Response
-): Promise<Partial<Customer> | void> => {
+): Promise<void> => {
   try {
-    const {
-      first_name,
-      last_name,
-      email,
-      phone_number,
-      address,
-      date_of_birth,
-      last_purchase_date,
-      total_orders,
-      total_spent,
-      customer_type,
-      preferred_contact_method,
-    } = req.body;
-
-    // Validations obligatoires
-    if (!first_name || !last_name || !email || !phone_number || !address) {
-      res.status(400).json({ message: "All fields are required" });
-      return;
-    }
-
-    if (typeof first_name !== "string" || first_name.trim() === "") {
-      res
-        .status(400)
-        .json({ message: "First name must be a non-empty string" });
-      return;
-    }
-
-    if (typeof last_name !== "string" || last_name.trim() === "") {
-      res.status(400).json({ message: "Last name must be a non-empty string" });
-      return;
-    }
-
-    if (typeof email !== "string" || !/^\S+@\S+\.\S+$/.test(email)) {
-      res.status(400).json({ message: "Invalid email format" });
-      return;
-    }
-
-    if (typeof phone_number !== "string" || phone_number.trim() === "") {
-      res
-        .status(400)
-        .json({ message: "Phone number must be a non-empty string" });
-      return;
-    }
-
-    if (typeof address !== "string" || address.trim() === "") {
-      res.status(400).json({ message: "Address must be a non-empty string" });
-      return;
-    }
-
-    let dateOfBirth: Date | undefined;
-    if (date_of_birth) {
-      dateOfBirth = new Date(date_of_birth);
-      if (isNaN(dateOfBirth.getTime())) {
-        res.status(400).json({
-          message:
-            "Invalid date_of_birth format. Use ISO-8601 format (e.g., 2015-10-19T00:00:00.000Z)",
-        });
-        return;
-      }
-    }
-
-    let lastPurchaseDate: Date | undefined;
-    if (last_purchase_date) {
-      lastPurchaseDate = new Date(last_purchase_date);
-      if (isNaN(lastPurchaseDate.getTime())) {
-        res.status(400).json({
-          message: "Invalid last_purchase_date format. Use ISO-8601 format",
-        });
-        return;
-      }
-    }
-
-    const customerData: Prisma.CustomerCreateInput = {
-      first_name,
-      last_name,
-      email,
-      phone_number,
-      address,
-      // Optional fields
-      ...(dateOfBirth && { date_of_birth: dateOfBirth }),
-      ...(lastPurchaseDate && { last_purchase_date: lastPurchaseDate }),
-      ...(total_orders !== undefined && { total_orders }),
-      ...(total_spent !== undefined && { total_spent }),
-      ...(customer_type && { customer_type }),
-      ...(preferred_contact_method && { preferred_contact_method }),
-    };
-
-    const newCustomer = await customerService.createCustomer(customerData);
+    const newCustomer = await customerService.createCustomer(req.body);
     res.status(201).json(newCustomer);
   } catch (error) {
+    if (handlePrismaError(error, res)) {
+      return;
+    }
+
     console.error("Error creating customer:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
   }
 };
 

@@ -1,7 +1,4 @@
 import express from "express";
-
-const customerRouter = express.Router();
-
 import {
   createCustomer,
   deleteCustomer,
@@ -9,15 +6,26 @@ import {
   getCustomer,
   updateCustomer,
 } from "../controllers/customer.controller";
+import { validate } from "../middlewares/validate";
+import {
+  createCustomerSchema,
+  updateCustomerSchema,
+} from "../schemas/customer.schema";
+
+const customerRouter = express.Router();
 
 customerRouter.get("/", getAllCustomers);
 
 customerRouter.get("/:customerId", getCustomer);
 
-customerRouter.post("/", createCustomer);
+customerRouter.post("/", validate(createCustomerSchema), createCustomer);
 
 customerRouter.delete("/:customerId", deleteCustomer);
 
-customerRouter.put("/:customerId", updateCustomer);
+customerRouter.put(
+  "/:customerId",
+  validate(updateCustomerSchema),
+  updateCustomer
+);
 
 export default customerRouter;
