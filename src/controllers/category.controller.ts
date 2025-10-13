@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import { Category, CategoryType } from "../generated/prisma";
+import { Category } from "../generated/prisma";
 import * as categoryService from "../services/category.service";
+import { handlePrismaError } from "../utils/handlePrismaError";
 
 export const getAllCategories = async (
   req: Request,
@@ -25,7 +26,7 @@ export const getCategory = async (
   res: Response
 ): Promise<Category | undefined> => {
   try {
-    const categoryId = Number(req.params.categoryId);
+    const categoryId = Number(req.params.id);
 
     if (isNaN(categoryId) || categoryId <= 0) {
       res
@@ -51,27 +52,20 @@ export const getCategory = async (
 export const createCategory = async (
   req: Request,
   res: Response
-): Promise<Partial<Category> | void> => {
+): Promise<Category | void> => {
   try {
-    const { name } = req.body;
-
-    if (typeof name !== "string" || name.trim() === "") {
-      res
-        .status(400)
-        .json({ message: "Category name must be a non-empty string" });
+    const newCategory = await categoryService.createCategory(req.body);
+    res.status(201).json(newCategory);
+  } catch (error) {
+    if (handlePrismaError(error, res)) {
       return;
     }
 
-    const data = { name };
-
-    const newCategory = await categoryService.createCategory({
-      name: data.name as CategoryType,
-    });
-
-    res.status(201).json(newCategory);
-  } catch (error) {
     console.error("Error creating category:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
   }
 };
 
