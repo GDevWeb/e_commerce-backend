@@ -1,4 +1,9 @@
-import { Prisma, PrismaClient, Product } from "../generated/prisma";
+import {
+  CategoryType,
+  Prisma,
+  PrismaClient,
+  Product,
+} from "../generated/prisma";
 
 const prisma = new PrismaClient();
 
@@ -20,7 +25,7 @@ export const getAllProducts = async (
 
   if (filters.category) {
     where.category = {
-      name: { contains: filters.category, mode: "insensitive" },
+      name: filters.category as CategoryType,
     };
   }
 

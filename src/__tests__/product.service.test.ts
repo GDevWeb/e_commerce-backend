@@ -10,8 +10,19 @@ const prismaMock = {
 
 jest.mock("../generated/prisma", () => ({
   PrismaClient: jest.fn().mockImplementation(() => prismaMock),
+  Prisma: {
+    PrismaClientKnownRequestError: class PrismaClientKnownRequestError extends Error {
+      code: string;
+      constructor(message: string, code: string) {
+        super(message);
+        this.code = code;
+        this.name = "PrismaClientKnownRequestError";
+      }
+    },
+  },
 }));
 
+import { Prisma } from "../generated/prisma";
 import * as productService from "../services/product.service";
 
 describe("Products Service", () => {
@@ -23,28 +34,36 @@ describe("Products Service", () => {
     test("Should return all products", async () => {
       const mockProducts = [
         {
-          id: 1,
-          name: "Product 1",
-          description: "Description 1",
-          price: 100,
-          stock_quantity: 10,
+          id: 2,
+          name: "Clavier Mécanique",
+          sku: "CLA-50B3FFA6",
+          imageUrl: "/uploads/products/keyboard-1760350958614.jpg",
+          description: "Un clavier mécanique haut de gamme pour les gamers.",
+          weight: 1.2,
+          price: 149.99,
+          stock_quantity: 44,
           category_id: 1,
           brand_id: 1,
-          sku: "P001",
-          category: { id: 1, name: "Category 1" },
-          brand: { id: 1, name: "Brand 1" },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          category: { id: 1, name: "ELECTRONICS" },
+          brand: { id: 1, name: "Logitech" },
         },
         {
-          id: 2,
-          name: "Product 2",
-          description: "Description 2",
-          price: 200,
-          stock_quantity: 20,
-          category_id: 2,
-          brand_id: 2,
-          sku: "P002",
-          category: { id: 2, name: "Category 2" },
-          brand: { id: 2, name: "Brand 2" },
+          id: 3,
+          name: "souris gamer",
+          sku: "CLA-50B3FFA7",
+          imageUrl: "/uploads/products/mouse-1760350958614.jpg",
+          description: "Une souris ergonomique pour les gamers.",
+          weight: 0.2,
+          price: 79.99,
+          stock_quantity: 4,
+          category_id: 1,
+          brand_id: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          category: { id: 1, name: "ELECTRONICS" },
+          brand: { id: 1, name: "Logitech" },
         },
       ];
       prismaMock.product.findMany.mockResolvedValue(mockProducts);
@@ -83,7 +102,11 @@ describe("Products Service", () => {
           category_id: 1,
           brand_id: 1,
           sku: "P003",
-          category: { id: 1, name: "Category 1" },
+          imageUrl: "/uploads/products/image3.jpg",
+          weight: 1.0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          category: { id: 1, name: "ELECTRONICS" },
           brand: { id: 1, name: "Brand 1" },
         },
       ];
@@ -104,7 +127,7 @@ describe("Products Service", () => {
       });
     });
 
-    test("should filter products by name, category, and brand", async () => {
+    test("should filter products by name, category (exact match), and brand", async () => {
       const mockFilteredProducts = [
         {
           id: 1,
@@ -115,7 +138,11 @@ describe("Products Service", () => {
           category_id: 1,
           brand_id: 1,
           sku: "L001",
-          category: { id: 1, name: "Electronics" },
+          imageUrl: "/uploads/products/image4.jpg",
+          weight: 2.5,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          category: { id: 1, name: "ELECTRONICS" },
           brand: { id: 1, name: "Dell" },
         },
       ];
@@ -124,7 +151,7 @@ describe("Products Service", () => {
 
       const products = await productService.getAllProducts(1, 10, {
         name: "Laptop",
-        category: "Electronics",
+        category: "ELECTRONICS", // Changé pour correspondre à CategoryType
         brand: "Dell",
       });
 
@@ -132,8 +159,128 @@ describe("Products Service", () => {
       expect(prismaMock.product.findMany).toHaveBeenCalledWith({
         where: {
           name: { contains: "Laptop", mode: "insensitive" },
-          category: { name: { contains: "Electronics", mode: "insensitive" } },
+          category: { name: "ELECTRONICS" }, // Changé: exact match au lieu de contains
           brand: { name: { contains: "Dell", mode: "insensitive" } },
+        },
+        include: {
+          category: true,
+          brand: true,
+        },
+        skip: 0,
+        take: 10,
+      });
+    });
+
+    test("should filter products only by name when provided", async () => {
+      const mockProducts = [
+        {
+          id: 1,
+          name: "Gaming Laptop",
+          description: "High-end gaming laptop",
+          price: 1500,
+          stock_quantity: 5,
+          category_id: 1,
+          brand_id: 1,
+          sku: "L001",
+          imageUrl: "/uploads/products/laptop.jpg",
+          weight: 2.5,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          category: { id: 1, name: "ELECTRONICS" },
+          brand: { id: 1, name: "Dell" },
+        },
+      ];
+
+      prismaMock.product.findMany.mockResolvedValue(mockProducts);
+
+      const products = await productService.getAllProducts(1, 10, {
+        name: "Laptop",
+      });
+
+      expect(products).toEqual(mockProducts);
+      expect(prismaMock.product.findMany).toHaveBeenCalledWith({
+        where: {
+          name: { contains: "Laptop", mode: "insensitive" },
+        },
+        include: {
+          category: true,
+          brand: true,
+        },
+        skip: 0,
+        take: 10,
+      });
+    });
+
+    test("should filter products only by brand when provided", async () => {
+      const mockProducts = [
+        {
+          id: 1,
+          name: "Gaming Mouse",
+          description: "RGB gaming mouse",
+          price: 79.99,
+          stock_quantity: 10,
+          category_id: 1,
+          brand_id: 2,
+          sku: "M001",
+          imageUrl: "/uploads/products/mouse.jpg",
+          weight: 0.2,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          category: { id: 1, name: "ELECTRONICS" },
+          brand: { id: 2, name: "Logitech" },
+        },
+      ];
+
+      prismaMock.product.findMany.mockResolvedValue(mockProducts);
+
+      const products = await productService.getAllProducts(1, 10, {
+        brand: "Logitech",
+      });
+
+      expect(products).toEqual(mockProducts);
+      expect(prismaMock.product.findMany).toHaveBeenCalledWith({
+        where: {
+          brand: { name: { contains: "Logitech", mode: "insensitive" } },
+        },
+        include: {
+          category: true,
+          brand: true,
+        },
+        skip: 0,
+        take: 10,
+      });
+    });
+
+    test("should filter products only by category when provided", async () => {
+      const mockProducts = [
+        {
+          id: 1,
+          name: "T-Shirt",
+          description: "Cotton t-shirt",
+          price: 29.99,
+          stock_quantity: 100,
+          category_id: 2,
+          brand_id: 3,
+          sku: "TS001",
+          imageUrl: "/uploads/products/tshirt.jpg",
+          weight: 0.3,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          category: { id: 2, name: "CLOTHING" },
+          brand: { id: 3, name: "Nike" },
+        },
+      ];
+
+      prismaMock.product.findMany.mockResolvedValue(mockProducts);
+
+      const products = await productService.getAllProducts(1, 10, {
+        category: "CLOTHING",
+      });
+
+      expect(products).toEqual(mockProducts);
+      expect(prismaMock.product.findMany).toHaveBeenCalledWith({
+        where: {
+          category: { name: "CLOTHING" },
         },
         include: {
           category: true,
@@ -145,8 +292,8 @@ describe("Products Service", () => {
     });
   });
 
-  describe("getProduct", () => {
-    test("should return", async () => {
+  describe("getProductById", () => {
+    test("should return a product by id", async () => {
       const mockProduct = {
         id: 1,
         name: "Product 1",
@@ -156,8 +303,10 @@ describe("Products Service", () => {
         category_id: 1,
         brand_id: 1,
         sku: "P003",
-        category: { id: 1, name: "Category 1" },
-        brand: { id: 1, name: "Brand 1" },
+        imageUrl: "/uploads/products/image5.jpg",
+        weight: 1.0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       prismaMock.product.findUnique.mockResolvedValue(mockProduct);
@@ -191,12 +340,21 @@ describe("Products Service", () => {
         sku: "P003",
         category: { connect: { id: 1 } },
         brand: { connect: { id: 1 } },
+        imageUrl: "/uploads/products/image6.jpg",
       };
       const createdProduct = {
         id: 1,
-        ...newProductData,
+        name: "Product 1",
+        price: 300,
+        stock_quantity: 30,
+        sku: "P003",
+        imageUrl: "/uploads/products/image6.jpg",
+        description: null,
+        weight: null,
         category_id: 1,
         brand_id: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
       prismaMock.product.create.mockResolvedValue(createdProduct);
 
@@ -211,7 +369,20 @@ describe("Products Service", () => {
 
   describe("deleteProduct", () => {
     test("should delete a product", async () => {
-      const deletedProduct = { id: 1 };
+      const deletedProduct = {
+        id: 1,
+        name: "Product 1",
+        price: 100,
+        stock_quantity: 10,
+        sku: "P001",
+        imageUrl: "/uploads/products/image1.jpg",
+        description: null,
+        weight: null,
+        category_id: 1,
+        brand_id: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       prismaMock.product.delete.mockResolvedValue(deletedProduct);
 
       const product = await productService.deleteProduct(1);
@@ -221,12 +392,57 @@ describe("Products Service", () => {
         where: { id: 1 },
       });
     });
+
+    test("should return null if product to delete is not found", async () => {
+      const error: any = new Error("Record to delete does not exist.");
+      error.name = "PrismaClientKnownRequestError";
+      error.code = "P2025";
+      error.clientVersion = "6.16.3";
+      error.meta = { cause: "Record not found" };
+
+      // Faire en sorte que instanceof fonctionne
+      Object.setPrototypeOf(
+        error,
+        Prisma.PrismaClientKnownRequestError.prototype
+      );
+
+      prismaMock.product.delete.mockRejectedValue(error);
+
+      const product = await productService.deleteProduct(999);
+
+      expect(product).toBeNull();
+      expect(prismaMock.product.delete).toHaveBeenCalledWith({
+        where: { id: 999 },
+      });
+    });
+
+    test("should throw error if deletion fails for other reasons", async () => {
+      const error = new Error("Database connection error");
+      prismaMock.product.delete.mockRejectedValue(error);
+
+      await expect(productService.deleteProduct(1)).rejects.toThrow(
+        "Database connection error"
+      );
+    });
   });
 
   describe("updateProduct", () => {
     test("should update an existing product", async () => {
-      const updatedProductData = { name: "Updated Books" };
-      const updatedProduct = { id: 2, ...updatedProductData };
+      const updatedProductData = { name: "Updated Product" };
+      const updatedProduct = {
+        id: 2,
+        name: "Updated Product",
+        price: 200,
+        stock_quantity: 20,
+        sku: "P002",
+        imageUrl: "/uploads/products/image2.jpg",
+        description: null,
+        weight: null,
+        category_id: 1,
+        brand_id: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       prismaMock.product.update.mockResolvedValue(updatedProduct);
 
       const product = await productService.updateProduct(2, updatedProductData);
@@ -238,17 +454,35 @@ describe("Products Service", () => {
       });
     });
 
-    test("should return null if product to update is not found", async () => {
-      prismaMock.product.update.mockResolvedValue(null);
+    test("should handle update with multiple fields", async () => {
+      const updatedProductData = {
+        name: "Updated Product",
+        price: 350,
+        stock_quantity: 15,
+        description: "New description",
+      };
+      const updatedProduct = {
+        id: 2,
+        name: "Updated Product",
+        price: 350,
+        stock_quantity: 15,
+        description: "New description",
+        sku: "P002",
+        imageUrl: "/uploads/products/image2.jpg",
+        weight: null,
+        category_id: 1,
+        brand_id: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      prismaMock.product.update.mockResolvedValue(updatedProduct);
 
-      const product = await productService.updateProduct(999, {
-        name: "NonExistent",
-      });
+      const product = await productService.updateProduct(2, updatedProductData);
 
-      expect(product).toBeNull();
+      expect(product).toEqual(updatedProduct);
       expect(prismaMock.product.update).toHaveBeenCalledWith({
-        where: { id: 999 },
-        data: { name: "NonExistent" },
+        where: { id: 2 },
+        data: updatedProductData,
       });
     });
   });

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Product } from "../generated/prisma";
 import * as productService from "../services/product.service";
+import { generateSKU } from "../utils/product.utils";
 
 export const getAllProducts = async (
   req: Request,
@@ -64,49 +65,33 @@ export const createProduct = async (
   res: Response
 ): Promise<Partial<Product> | void> => {
   try {
-    const { name, category_id, price, stock_quantity } = req.body;
+    const imageUrl = req.file?.path.replace(/\\/g, "/");
+    const {
+      name,
+      sku,
+      description,
+      weight,
+      price,
+      stock_quantity,
+      category_id,
+      brand_id,
+    } = req.body;
 
-    if (!name || !category_id || !price || !stock_quantity) {
+    if (!name || !category_id || !price || !stock_quantity || !brand_id) {
       res.status(400).json({ message: "All fields are required" });
       return;
     }
 
-    if (typeof name !== "string" || name.trim() === "") {
-      res
-        .status(400)
-        .json({ message: "Product name must be a non-empty string" });
-      return;
-    }
-    if (typeof category_id !== "number" || category_id <= 0) {
-      res
-        .status(400)
-        .json({ message: "Category ID must be a positive number" });
-      return;
-    }
-    if (typeof price !== "number" || price <= 0) {
-      res.status(400).json({ message: "Price must be a positive number" });
-      return;
-    }
-    if (typeof stock_quantity !== "number" || stock_quantity < 0) {
-      res
-        .status(400)
-        .json({ message: "Stock quantity must be a non-negative number" });
-      return;
-    }
-
-    const data = {
-      name,
-      category_id,
-      price,
-      stock_quantity,
-    };
-
     const newProduct = await productService.createProduct({
-      name: data.name,
-      price: data.price,
-      stock_quantity: data.stock_quantity,
-      category: { connect: { id: data.category_id } },
-      sku: "",
+      name,
+      sku: generateSKU(name),
+      imageUrl: `${imageUrl ? imageUrl : "https://placehold.co/300x200"}`,
+      description,
+      weight: parseFloat(weight),
+      price: parseFloat(price),
+      stock_quantity: parseInt(stock_quantity),
+      category: { connect: { id: parseInt(category_id) } },
+      brand: { connect: { id: parseInt(brand_id) } },
     });
 
     res.status(201).json(newProduct);

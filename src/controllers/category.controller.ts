@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Category } from "../generated/prisma";
+import { Category, CategoryType } from "../generated/prisma";
 import * as categoryService from "../services/category.service";
 
 export const getAllCategories = async (
@@ -65,7 +65,7 @@ export const createCategory = async (
     const data = { name };
 
     const newCategory = await categoryService.createCategory({
-      name: data.name,
+      name: data.name as CategoryType,
     });
 
     res.status(201).json(newCategory);
@@ -148,7 +148,7 @@ export const updateCategory = async (
 
     const updatedCategory = await categoryService.updateCategory(
       categoryId,
-      data
+      data as Category
     );
     res.status(200).json(updatedCategory);
   } catch (error) {

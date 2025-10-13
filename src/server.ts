@@ -1,5 +1,7 @@
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
+import fs from "fs";
+import path from "path";
 import { PrismaClient } from "./generated/prisma";
 import brandRouter from "./routes/brand.routes";
 import categoryRouter from "./routes/category.routes";
@@ -13,6 +15,8 @@ const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 
 server.use(express.json());
+
+server.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 server.use("/api/product", productRouter);
 server.use("/api/category", categoryRouter);
@@ -38,5 +42,3 @@ async function main() {
 }
 
 main();
-
-// commit
