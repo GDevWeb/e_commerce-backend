@@ -10,19 +10,14 @@ import upload from "../middlewares/upload.middleware";
 
 const productRouter = express.Router();
 
-// get
 productRouter.get("/", getAllProducts);
 
-// getById
-productRouter.get("/:productId", getProduct);
+productRouter.get("/:id", getProduct);
 
-// post
 productRouter.post("/", upload.single("imageUrl"), createProduct);
 
-// delete
-productRouter.delete("/:productId", deleteProduct);
+productRouter.put("/:id", updateProduct);
 
-// update
-productRouter.put("/:productId", updateProduct);
+productRouter.delete("/:id", deleteProduct);
 
 export default productRouter;

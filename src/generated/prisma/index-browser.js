@@ -226,23 +226,6 @@ exports.ContactMethod = exports.$Enums.ContactMethod = {
   WHATSAPP: 'WHATSAPP'
 };
 
-exports.CategoryType = exports.$Enums.CategoryType = {
-  ELECTRONICS: 'ELECTRONICS',
-  CLOTHING: 'CLOTHING',
-  BOOKS: 'BOOKS',
-  HOME_APPLIANCES: 'HOME_APPLIANCES',
-  SPORTS: 'SPORTS',
-  OUTDOORS: 'OUTDOORS',
-  TOYS: 'TOYS',
-  GAMES: 'GAMES',
-  FOOD: 'FOOD',
-  DRINKS: 'DRINKS',
-  HEALTH: 'HEALTH',
-  BEAUTY: 'BEAUTY',
-  AUTOMOTIVE: 'AUTOMOTIVE',
-  INDUSTRIAL: 'INDUSTRIAL'
-};
-
 exports.OrderStatus = exports.$Enums.OrderStatus = {
   PENDING: 'PENDING',
   PROCESSING: 'PROCESSING',

@@ -20,8 +20,8 @@ categoryRouter.get("/:id", getCategory);
 
 categoryRouter.post("/", validate(createCategorySchema), createCategory);
 
-categoryRouter.delete("/:id", deleteCategory);
+categoryRouter.patch("/:id", validate(updateCategorySchema), updateCategory);
 
-categoryRouter.put("/:id", validate(updateCategorySchema), updateCategory);
+categoryRouter.delete("/:id", deleteCategory);
 
 export default categoryRouter;

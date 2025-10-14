@@ -24,23 +24,23 @@ enum ContactMethod {
   SMS
   WHATSAPP
 }
-
-enum CategoryType {
-  ELECTRONICS
-  CLOTHING
-  BOOKS
-  HOME_APPLIANCES
-  SPORTS
-  OUTDOORS
-  TOYS
-  GAMES
-  FOOD
-  DRINKS
-  HEALTH
-  BEAUTY
-  AUTOMOTIVE
-  INDUSTRIAL
-}
+// === 14/10/25 - Change for String ===
+// enum CategoryType {
+//   ELECTRONICS
+//   CLOTHING
+//   BOOKS
+//   HOME_APPLIANCES
+//   SPORTS
+//   OUTDOORS
+//   TOYS
+//   GAMES
+//   FOOD
+//   DRINKS
+//   HEALTH
+//   BEAUTY
+//   AUTOMOTIVE
+//   INDUSTRIAL
+// }
 
 enum OrderStatus {
   PENDING
@@ -87,7 +87,7 @@ model Brand {
 
 model Category {
   id        Int          @id @default(autoincrement())
-  name      CategoryType @unique
+  name      String       @unique
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   products  Product[]
