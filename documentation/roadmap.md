@@ -70,8 +70,8 @@
   - `ValidationError`, `NotFoundError`, `UnauthorizedError`, etc.
 - [x] Create global error middleware (`src/middleware/errorHandler.ts`)
 - [x] Handle Prisma errors (P2002, P2025, etc.)
-- [ ] Implement Winston Logger
-- [ ] **Deliverable**: Structured errors + professional logs
+- [x] Implement Winston Logger
+- [x] **Deliverable**: Structured errors + professional logs
 
 **Estimated time: 4h**
 

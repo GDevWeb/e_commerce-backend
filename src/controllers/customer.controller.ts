@@ -1,33 +1,25 @@
-import { Request, Response } from "express";
 import { NotFoundError } from "../errors";
-import { Customer } from "../generated/prisma";
 import * as customerService from "../services/customer.service";
-import { handlePrismaError } from "../utils/handlePrismaError";
+import { asyncHandler } from "../utils/asyncHandler";
 
-export const getAllCustomers = async (
-  req: Request,
-  res: Response
-): Promise<Customer[] | void> => {
-  try {
-    const customers = await customerService.getAllCustomers();
+/**
+ * GET /api/customers
+ */
+export const getAllCustomers = asyncHandler(async (req, res) => {
+  const customers = await customerService.getAllCustomers();
 
-    if (customers.length === 0) {
-      res.status(404).json({ message: "No customers found" });
-      return;
-    }
-    res.status(200).json(customers);
-  } catch (error) {
-    console.error("Error fetching customers:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
+  res.status(200).json({
+    status: "success",
+    results: customers.length,
+    data: customers,
+  });
+});
 
-export const getCustomer = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+/**
+ * GET /api/customers/:id
+ */
+export const getCustomer = asyncHandler(async (req, res) => {
   const customerId = parseInt(req.params.id);
-
   const customer = await customerService.getCustomerById(customerId);
 
   if (!customer) {
@@ -38,73 +30,50 @@ export const getCustomer = async (
     status: "success",
     data: customer,
   });
-};
+});
 
-export const createCustomer = async (
-  req: Request,
-  res: Response
-): Promise<Customer | void> => {
-  try {
-    const newCustomer = await customerService.createCustomer(req.body);
-    res.status(201).json(newCustomer);
-  } catch (error) {
-    if (handlePrismaError(error)) {
-      return;
-    }
+/**
+ * POST /api/customers
+ */
+export const createCustomer = asyncHandler(async (req, res) => {
+  const newCustomer = await customerService.createCustomer(req.body);
 
-    console.error("Error creating customer:", error);
-    res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
-  }
-};
+  res.status(201).json({
+    status: "success",
+    message: "Customer created successfully",
+    data: newCustomer,
+  });
+});
 
-export const deleteCustomer = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const customerId = parseInt(req.params.id);
+/**
+ * PATCH /api/customers/:id
+ */
+export const updateCustomer = asyncHandler(async (req, res) => {
+  const customerId = parseInt(req.params.id);
 
-    const customer = await customerService.deleteCustomer(customerId);
+  const updatedCustomer = await customerService.updateCustomer(
+    customerId,
+    req.body
+  );
 
-    if (!customer) {
-      res.status(404).json({
-        message: `Customer with ID ${customerId} not found`,
-      });
-      return;
-    }
+  res.status(200).json({
+    status: "success",
+    message: "Customer updated successfully",
+    data: updatedCustomer,
+  });
+});
 
-    res.status(200).json({
-      message: `Customer with ID ${customerId} deleted successfully`,
-      customer,
-    });
-  } catch (error) {
-    console.error("Error deleting customer:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
+/**
+ * DELETE /api/customers/:id
+ */
+export const deleteCustomer = asyncHandler(async (req, res) => {
+  const customerId = parseInt(req.params.id);
 
-export const updateCustomer = async (
-  req: Request,
-  res: Response
-): Promise<Customer | void> => {
-  try {
-    const customerId = parseInt(req.params.id);
+  const deletedCustomer = await customerService.deleteCustomer(customerId);
 
-    const updatedCustomer = await customerService.updateCustomer(
-      customerId,
-      req.body
-    );
-
-    res.status(200).json(updatedCustomer);
-  } catch (error) {
-    if (handlePrismaError(error)) {
-      return;
-    }
-
-    console.error("Error updating customer:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
+  res.status(200).json({
+    status: "success",
+    message: "Customer deleted successfully",
+    data: deletedCustomer,
+  });
+});

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import { AppError } from "../errors";
 import { Prisma } from "../generated/prisma";
+import logger from "../utils/logger";
 
 /**
  * Global Error Handler Middleware.
@@ -14,7 +15,7 @@ export const errorHandler = (
   next: NextFunction
 ): void => {
   // Log the error for debugging purposes
-  console.error("❌ Error caught by global handler:", {
+  logger.error("❌ Error caught by global handler:", {
     name: error.name,
     message: error.message,
     stack: process.env.NODE_ENV === "development" ? error.stack : undefined,

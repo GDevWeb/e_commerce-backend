@@ -19,17 +19,7 @@ export const createCustomer = async (
 };
 
 export const deleteCustomer = async (id: number): Promise<Customer | null> => {
-  try {
-    return await prisma.customer.delete({ where: { id } });
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      return null;
-    }
-    throw error;
-  }
+  return prisma.customer.delete({ where: { id } });
 };
 
 export const updateCustomer = async (
