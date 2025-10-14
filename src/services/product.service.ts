@@ -3,9 +3,6 @@ import { PaginatedProducts, ProductFilters } from "../types/product.types";
 
 const prisma = new PrismaClient();
 
-/**
- * Récupère tous les produits avec filtres et pagination
- */
 export const getAllProducts = async (
   filters: ProductFilters
 ): Promise<PaginatedProducts> => {

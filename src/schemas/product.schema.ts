@@ -61,7 +61,6 @@ export const getProductsQuerySchema = z.object({
     .optional(),
 });
 
-// Types exportés
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type GetProductsQuery = z.infer<typeof getProductsQuerySchema>;

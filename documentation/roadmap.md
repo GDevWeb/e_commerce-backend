@@ -53,10 +53,10 @@
   - [x] Refactoring `src/schemas/category.routes.ts`
   - [x] Refactoring `src/schemas/category.test.ts`
   - [x] Refactoring `src/schemas/category.test.ts`
-- [ ] Create centralized validation middleware
-- [ ] Create `src/schemas/product.schema.ts`
-- [ ] Refactor 2 controllers to use Zod
-- [ ] **Deliverable**: Type-safe validations + less boilerplate code
+- [x] Create centralized validation middleware
+- [x] Create `src/schemas/product.schema.ts`
+- [x] Refactor 2 controllers to use Zod
+- [x] **Deliverable**: Type-safe validations + less boilerplate code
 
 **Estimated time: 4h**
 
