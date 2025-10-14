@@ -40,14 +40,23 @@
 
 - [x] Install Zod: `npm install zod`
 - [x] Create `src/schemas/customer.schema.ts`
-  - [x] Rafactoring `src/schemas/customer.service.ts`
-  - [x] Rafactoring `src/schemas/customer.controller.ts`
-  - [x] Rafactoring `src/schemas/customer.routes.ts`
-  - [x] Rafactoring `src/schemas/customer.test.ts`
-- [ ] Create centralized validation middleware
-- [ ] Create `src/schemas/product.schema.ts`
-- [ ] Refactor 2 controllers to use Zod
-- [ ] **Deliverable**: Type-safe validations + less boilerplate code
+  - [x] Refactoring `src/schemas/customer.service.ts`
+  - [x] Refactoring `src/schemas/customer.controller.ts`
+  - [x] Refactoring `src/schemas/customer.routes.ts`
+  - [x] Refactoring `src/schemas/customer.test.ts`
+  - [x] Refactoring `src/schemas/brand.service.ts`
+  - [x] Refactoring `src/schemas/brand.controller.ts`
+  - [x] Refactoring `src/schemas/brand.routes.ts`
+  - [x] Refactoring `src/schemas/brand.test.ts`
+  - [x] Refactoring `src/schemas/category.service.ts`
+  - [x] Refactoring `src/schemas/category.controller.ts`
+  - [x] Refactoring `src/schemas/category.routes.ts`
+  - [x] Refactoring `src/schemas/category.test.ts`
+  - [x] Refactoring `src/schemas/category.test.ts`
+- [x] Create centralized validation middleware
+- [x] Create `src/schemas/product.schema.ts`
+- [x] Refactor 2 controllers to use Zod
+- [x] **Deliverable**: Type-safe validations + less boilerplate code
 
 **Estimated time: 4h**
 

@@ -2,7 +2,11 @@ import { z } from "zod";
 
 const BrandSchema = z.object({
   id: z.number().int().positive().optional(),
-  name: z.string().min(1, "Brand name is required").trim(),
+  name: z
+    .string()
+    .min(1, "Brand name is required")
+    .max(50, "Brand name must not exceed 50 characters")
+    .trim(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });
@@ -12,7 +16,7 @@ export const createBrandSchema = z.object({
     id: true,
     createdAt: true,
     updatedAt: true,
-  }),
+  }).strict(),
 });
 
 export const updateBrandSchema = z.object({
@@ -28,7 +32,9 @@ export const updateBrandSchema = z.object({
     id: true,
     createdAt: true,
     updatedAt: true,
-  }).partial(),
+  })
+    .partial()
+    .strict(),
 });
 
 export type CreateBrandInput = z.infer<typeof createBrandSchema>;

@@ -7,41 +7,47 @@ export const getAllBrands = async (): Promise<Brand[]> => {
     include: {
       products: true,
     },
+    orderBy: {
+      name: "asc",
+    },
   });
 };
 
-export const getBrandById = async (id: number): Promise<Brand | null> => {
-  return prisma.brand.findUnique({
+export const getBrandById = async (id: number): Promise<Brand> => {
+  return prisma.brand.findUniqueOrThrow({
     where: { id },
+    include: {
+      products: true,
+    },
   });
 };
 
 export const createBrand = async (
   data: Prisma.BrandCreateInput
 ): Promise<Brand> => {
-  return prisma.brand.create({ data });
-};
-
-export const deleteBrand = async (id: number): Promise<Brand | null> => {
-  try {
-    return await prisma.brand.delete({ where: { id } });
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      return null;
-    }
-    throw error;
-  }
+  return prisma.brand.create({
+    data: {
+      name: data.name.trim(),
+    },
+  });
 };
 
 export const updateBrand = async (
   id: number,
   data: Prisma.BrandUpdateInput
-): Promise<Brand | null> => {
+): Promise<Brand> => {
+  if (data.name && typeof data.name === "string") {
+    data.name = data.name.trim();
+  }
+
   return prisma.brand.update({
     where: { id },
     data,
+  });
+};
+
+export const deleteBrand = async (id: number): Promise<Brand> => {
+  return prisma.brand.delete({
+    where: { id },
   });
 };

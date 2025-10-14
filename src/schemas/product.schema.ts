@@ -1,68 +1,66 @@
-import * as z from "zod";
+import { z } from "zod";
 
-const Product = z.object({
+const ProductSchema = z.object({
   id: z.number().int().positive().optional(),
-  name: z.string().min(1, "Product name cannot be empty"),
-  sku: z.string().min(1, "SKU cannot be empty"),
-  imageUrl: z.url("Invalid image URL").optional(),
-  description: z.string().optional(),
-  weight: z.number().positive("Weight must be a positive number").optional(),
-  price: z.number().positive("Price must be a positive number"),
+  name: z.string().min(1, "Product name is required").max(255).trim(),
+  sku: z.string().min(1, "SKU is required").max(50).trim().toUpperCase(),
+  imageUrl: z.url("Invalid image URL").optional().nullable(),
+  description: z.string().max(1000).optional().nullable(),
+  weight: z.number().positive("Weight must be positive").optional().nullable(),
+  price: z.number().positive("Price must be positive"),
   stock_quantity: z
     .number()
     .int()
-    .nonnegative("Stock quantity cannot be negative"),
-  category_id: z
-    .number()
-    .int()
-    .positive("Category ID must be a positive number"),
-  brand_id: z.number().int().positive("Brand ID must be a positive number"),
-  created_at: z.iso.datetime().optional(),
-  updated_at: z.iso.datetime().optional(),
+    .nonnegative("Stock cannot be negative")
+    .default(0),
+  category_id: z.number().int().positive("Category ID is required"),
+  brand_id: z.number().int().positive("Brand ID is required"),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
 export const createProductSchema = z.object({
-  body: Product.omit({
+  body: ProductSchema.omit({
     id: true,
-    created_at: true,
-    updated_at: true,
     sku: true,
-  }).extend({
-    category_id: z
-      .number()
-      .int()
-      .positive("Category ID must be a positive number"),
-    brand_id: z.number().int().positive("Brand ID must be a positive number"),
-  }),
+    createdAt: true,
+    updatedAt: true,
+  }).strict(),
 });
 
 export const updateProductSchema = z.object({
-  body: Product.omit({
+  params: z.object({
+    id: z
+      .string()
+      .refine((val) => !isNaN(Number(val)), {
+        message: "Product ID must be a valid number",
+      })
+      .transform(Number),
+  }),
+  body: ProductSchema.omit({
     id: true,
-    created_at: true,
-    updated_at: true,
     sku: true,
+    createdAt: true,
+    updatedAt: true,
   })
     .partial()
-    .extend({
-      category_id: z
-        .number()
-        .int()
-        .positive("Category ID must be a positive number")
-        .optional(),
-      brand_id: z
-        .number()
-        .int()
-        .positive("Brand ID must be a positive number")
-        .optional(),
-    }),
+    .strict(),
 });
 
-export const productParamsSchema = z.object({
-  productId: z
-    .string()
-    .refine((val) => !isNaN(Number(val)), {
-      message: "Product ID must be a number",
+export const getProductsQuerySchema = z.object({
+  query: z
+    .object({
+      name: z.string().optional(),
+      category: z.string().optional(),
+      brand: z.string().optional(),
+      minPrice: z.string().transform(Number).optional(),
+      maxPrice: z.string().transform(Number).optional(),
+      page: z.string().transform(Number).default(1),
+      pageSize: z.string().transform(Number).default(10),
     })
-    .transform(Number),
+    .optional(),
 });
+
+export type CreateProductInput = z.infer<typeof createProductSchema>;
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;
+export type GetProductsQuery = z.infer<typeof getProductsQuerySchema>;
