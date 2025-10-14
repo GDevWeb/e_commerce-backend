@@ -23,7 +23,7 @@ export const configureSecurityMiddlewares = (app: Express) => {
       crossOriginOpenerPolicy: { policy: "same-origin" },
       crossOriginResourcePolicy: { policy: "same-origin" },
 
-      // Autres protections
+      // Another protections
       dnsPrefetchControl: { allow: false },
       frameguard: { action: "deny" }, //clickjacking
       hidePoweredBy: true, // Hide the X-Powered-By header
@@ -33,7 +33,7 @@ export const configureSecurityMiddlewares = (app: Express) => {
         preload: true,
       },
       ieNoOpen: true,
-      noSniff: true, // Prévient MIME sniffing
+      noSniff: true, // Prevent MIME sniffing
       referrerPolicy: { policy: "no-referrer" },
       xssFilter: true,
     })
