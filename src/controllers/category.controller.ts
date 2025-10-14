@@ -1,128 +1,54 @@
-import { Request, Response } from "express";
 import * as categoryService from "../services/category.service";
-import { handlePrismaError } from "../utils/handlePrismaError";
+import { asyncHandler } from "../utils/asyncHandler";
 
-export const getAllCategories = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const categories = await categoryService.getAllCategories();
+export const getAllCategories = asyncHandler(async (req, res) => {
+  const categories = await categoryService.getAllCategories();
 
-    res.status(200).json({
-      status: "success",
-      results: categories.length,
-      data: categories,
-    });
-  } catch (error) {
-    console.error("Error fetching categories:", error);
-    res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
-  }
-};
+  res.status(200).json({
+    status: "success",
+    results: categories.length,
+    data: categories,
+  });
+});
 
-export const getCategory = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const categoryId = parseInt(req.params.id);
+export const getCategory = asyncHandler(async (req, res) => {
+  const categoryId = parseInt(req.params.id);
+  const category = await categoryService.getCategoryById(categoryId);
 
-    const category = await categoryService.getCategoryById(categoryId);
+  res.status(200).json({
+    status: "success",
+    data: category,
+  });
+});
 
-    res.status(200).json({
-      status: "success",
-      data: category,
-    });
-  } catch (error) {
-    if (handlePrismaError(error)) {
-      return;
-    }
-    console.error("Error fetching category:", error);
-    res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
-  }
-};
+export const createCategory = asyncHandler(async (req, res) => {
+  const newCategory = await categoryService.createCategory(req.body);
+  res.status(201).json({
+    status: "success",
+    message: "Category created successfully",
+    data: newCategory,
+  });
+});
 
-export const createCategory = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const newCategory = await categoryService.createCategory(req.body);
+export const updateCategory = asyncHandler(async (req, res) => {
+  const categoryId = parseInt(req.params.id);
+  const updatedCategory = await categoryService.updateCategory(
+    categoryId,
+    req.body
+  );
+  res.status(200).json({
+    status: "success",
+    message: "Category updated successfully",
+    data: updatedCategory,
+  });
+});
 
-    res.status(201).json({
-      status: "success",
-      message: "Category created successfully",
-      data: newCategory,
-    });
-  } catch (error) {
-    if (handlePrismaError(error)) {
-      return;
-    }
-    console.error("Error creating category:", error);
-    res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
-  }
-};
-
-export const updateCategory = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const categoryId = parseInt(req.params.id);
-
-    const updatedCategory = await categoryService.updateCategory(
-      categoryId,
-      req.body
-    );
-
-    res.status(200).json({
-      status: "success",
-      message: "Category updated successfully",
-      data: updatedCategory,
-    });
-  } catch (error) {
-    if (handlePrismaError(error)) {
-      return;
-    }
-    console.error("Error updating category:", error);
-    res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
-  }
-};
-
-export const deleteCategory = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const categoryId = parseInt(req.params.id);
-
-    const deletedCategory = await categoryService.deleteCategory(categoryId);
-
-    res.status(200).json({
-      status: "success",
-      message: "Category deleted successfully",
-      data: deletedCategory,
-    });
-  } catch (error) {
-    if (handlePrismaError(error)) {
-      return;
-    }
-    console.error("Error deleting category:", error);
-    res.status(500).json({
-      status: "error",
-      message: "Internal server error",
-    });
-  }
-};
+export const deleteCategory = asyncHandler(async (req, res) => {
+  const categoryId = parseInt(req.params.id);
+  const deletedCategory = await categoryService.deleteCategory(categoryId);
+  res.status(200).json({
+    status: "success",
+    message: "Category deleted successfully",
+    data: deletedCategory,
+  });
+});

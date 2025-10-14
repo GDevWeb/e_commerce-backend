@@ -7,6 +7,7 @@ import brandRouter from "./routes/brand.routes";
 import categoryRouter from "./routes/category.routes";
 import customerRouter from "./routes/customer.routes";
 import productRouter from "./routes/product.routes";
+import logger from "./utils/logger";
 
 dotenv.config();
 
@@ -36,7 +37,7 @@ async function main() {
     console.log(`Successfully connected to the database`);
 
     server.listen(PORT, () => {
-      console.log(`Server is listening on: "http://localhost:${PORT}"`);
+      logger.info(`Server is listening on: "http://localhost:${PORT}"`);
     });
   } catch (error) {
     console.error("Failed to connect to the database", error);
