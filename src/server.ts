@@ -3,6 +3,7 @@ import express, { Request, Response } from "express";
 import path from "path";
 import { PrismaClient } from "./generated/prisma";
 import { errorHandler } from "./middlewares/errorHandler";
+import { configureSecurityMiddlewares } from "./middlewares/security";
 import brandRouter from "./routes/brand.routes";
 import categoryRouter from "./routes/category.routes";
 import customerRouter from "./routes/customer.routes";
@@ -14,6 +15,9 @@ dotenv.config();
 const server = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
+
+// helmet
+configureSecurityMiddlewares(server);
 
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
