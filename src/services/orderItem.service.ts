@@ -37,6 +37,6 @@ export const updateOrderItem = async (
   });
 };
 
-export const deleteOrdItem = async (id: number): Promise<OrderItem> => {
+export const deleteOrderItem = async (id: number): Promise<OrderItem> => {
   return prisma.orderItem.delete({ where: { id } });
 };

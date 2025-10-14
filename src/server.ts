@@ -7,6 +7,7 @@ import { configureSecurityMiddlewares } from "./middlewares/security";
 import brandRouter from "./routes/brand.routes";
 import categoryRouter from "./routes/category.routes";
 import customerRouter from "./routes/customer.routes";
+import orderItemRouter from "./routes/orderItem.routes";
 import productRouter from "./routes/product.routes";
 import logger from "./utils/logger";
 
@@ -28,6 +29,7 @@ server.use("/api/products", productRouter);
 server.use("/api/categories", categoryRouter);
 server.use("/api/brands", brandRouter);
 server.use("/api/customers", customerRouter);
+server.use("/api/orderItems", orderItemRouter);
 
 server.get("/", (req: Request, res: Response) => {
   res.status(200).send("e_commerce API is running");
