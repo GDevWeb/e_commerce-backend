@@ -34,7 +34,7 @@ export const getBrand = async (req: Request, res: Response): Promise<void> => {
       data: brand,
     });
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
     console.error("Error fetching brand:", error);
@@ -58,7 +58,7 @@ export const createBrand = async (
       data: newBrand,
     });
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
     console.error("Error creating brand:", error);
@@ -84,7 +84,7 @@ export const updateBrand = async (
       data: updatedBrand,
     });
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
     console.error("Error updating brand:", error);
@@ -110,7 +110,7 @@ export const deleteBrand = async (
       data: deletedBrand,
     });
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
     console.error("Error deleting brand:", error);

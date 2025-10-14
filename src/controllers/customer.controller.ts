@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { NotFoundError } from "../errors";
 import { Customer } from "../generated/prisma";
 import * as customerService from "../services/customer.service";
 import { handlePrismaError } from "../utils/handlePrismaError";
@@ -24,23 +25,19 @@ export const getAllCustomers = async (
 export const getCustomer = async (
   req: Request,
   res: Response
-): Promise<Customer | void> => {
-  try {
-    const customerId = parseInt(req.params.id);
+): Promise<void> => {
+  const customerId = parseInt(req.params.id);
 
-    const customer = await customerService.getCustomerById(customerId);
+  const customer = await customerService.getCustomerById(customerId);
 
-    if (!customer) {
-      res
-        .status(404)
-        .json({ message: `Customer with ID ${customerId} not found` });
-      return;
-    }
-    res.status(200).json(customer);
-  } catch (error) {
-    console.error("Error fetching customer:", error);
-    res.status(500).json({ message: "Internal server error" });
+  if (!customer) {
+    throw new NotFoundError(`Customer with ID ${customerId} not found`);
   }
+
+  res.status(200).json({
+    status: "success",
+    data: customer,
+  });
 };
 
 export const createCustomer = async (
@@ -51,7 +48,7 @@ export const createCustomer = async (
     const newCustomer = await customerService.createCustomer(req.body);
     res.status(201).json(newCustomer);
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
 
@@ -103,7 +100,7 @@ export const updateCustomer = async (
 
     res.status(200).json(updatedCustomer);
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
 
