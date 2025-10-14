@@ -66,11 +66,11 @@
 
 **Goal: Professional error management**
 
-- [ ] Create custom error classes (`src/errors/`)
+- [x] Create custom error classes (`src/errors/`)
   - `ValidationError`, `NotFoundError`, `UnauthorizedError`, etc.
-- [ ] Create global error middleware (`src/middleware/errorHandler.ts`)
+- [x] Create global error middleware (`src/middleware/errorHandler.ts`)
+- [x] Handle Prisma errors (P2002, P2025, etc.)
 - [ ] Implement Winston Logger
-- [ ] Handle Prisma errors (P2002, P2025, etc.)
 - [ ] **Deliverable**: Structured errors + professional logs
 
 **Estimated time: 4h**

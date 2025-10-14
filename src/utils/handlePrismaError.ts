@@ -1,36 +1,37 @@
-import { Response } from "express";
+import { BadRequestError, ConflictError, NotFoundError } from "../errors";
 import { Prisma } from "../generated/prisma";
 
-export const handlePrismaError = (error: unknown, res: Response): boolean => {
+/**
+ * Convert the error Prisma in custom errors
+ * @param error The error object
+ */
+export const handlePrismaError = (error: unknown): never => {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    // P2002 - Unique constraint
+    // P2002 - Unique constraint violation
     if (error.code === "P2002") {
       const target = (error.meta?.target as string[]) || [];
-      res.status(409).json({
-        status: "error",
-        message: `A record with this ${target.join(", ")} already exists`,
-      });
-      return true;
+      throw new ConflictError(
+        `A record with this ${target.join(", ")} already exists`
+      );
     }
 
     // P2025 - Record not found
     if (error.code === "P2025") {
-      res.status(404).json({
-        status: "error",
-        message: "Record not found",
-      });
-      return true;
+      throw new NotFoundError("Record not found");
     }
 
     // P2003 - Foreign key constraint
     if (error.code === "P2003") {
-      res.status(400).json({
-        status: "error",
-        message: "Invalid relation",
-      });
-      return true;
+      throw new BadRequestError("Invalid relation or foreign key constraint");
+    }
+
+    // P2014 - Relation violation
+    if (error.code === "P2014") {
+      throw new BadRequestError(
+        "Cannot delete record due to existing relations"
+      );
     }
   }
 
-  return false;
+  throw error;
 };

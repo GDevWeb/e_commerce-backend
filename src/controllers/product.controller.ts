@@ -55,7 +55,7 @@ export const getProduct = async (
       data: product,
     });
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
     console.error("Error fetching product:", error);
@@ -104,7 +104,7 @@ export const createProduct = async (
       data: newProduct,
     });
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
     console.error("Error creating product:", error);
@@ -159,7 +159,7 @@ export const updateProduct = async (
       data: updatedProduct,
     });
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
     console.error("Error updating product:", error);
@@ -185,7 +185,7 @@ export const deleteProduct = async (
       data: deletedProduct,
     });
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
     console.error("Error deleting product:", error);

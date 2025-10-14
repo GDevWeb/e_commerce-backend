@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import express, { Request, Response } from "express";
 import path from "path";
 import { PrismaClient } from "./generated/prisma";
+import { errorHandler } from "./middlewares/errorHandler";
 import brandRouter from "./routes/brand.routes";
 import categoryRouter from "./routes/category.routes";
 import customerRouter from "./routes/customer.routes";
@@ -14,6 +15,7 @@ const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 
 server.use(express.json());
+server.use(express.urlencoded({ extended: true }));
 
 server.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
@@ -23,8 +25,10 @@ server.use("/api/brands", brandRouter);
 server.use("/api/customers", customerRouter);
 
 server.get("/", (req: Request, res: Response) => {
-  res.status(200).send("Data Dashboard API is running");
+  res.status(200).send("e_commerce API is running");
 });
+
+server.use(errorHandler);
 
 async function main() {
   try {

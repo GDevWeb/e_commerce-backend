@@ -37,7 +37,7 @@ export const getCategory = async (
       data: category,
     });
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
     console.error("Error fetching category:", error);
@@ -61,7 +61,7 @@ export const createCategory = async (
       data: newCategory,
     });
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
     console.error("Error creating category:", error);
@@ -90,7 +90,7 @@ export const updateCategory = async (
       data: updatedCategory,
     });
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
     console.error("Error updating category:", error);
@@ -116,7 +116,7 @@ export const deleteCategory = async (
       data: deletedCategory,
     });
   } catch (error) {
-    if (handlePrismaError(error, res)) {
+    if (handlePrismaError(error)) {
       return;
     }
     console.error("Error deleting category:", error);
