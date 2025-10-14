@@ -294,8 +294,8 @@ e-commerce-backend/
 
 ### 🔄 Phase 2: Business Logic (Weeks 3-5) - **IN PROGRESS**
 
-- [ ] Advanced validation with Zod
-- [ ] Centralized error handling
+- [x] Advanced validation with Zod - TODO: OrderItem et Review
+- [x] Centralized error handling
 - [ ] JWT Authentication
 - [ ] Order management system
 
@@ -684,8 +684,8 @@ e-commerce-backend/
 
 ### 🔄 Phase 2 : Logique Métier (Semaines 3-5) - **EN COURS**
 
-- [ ] Validation avancée avec Zod
-- [ ] Gestion centralisée des erreurs
+- [x] Validation avancée avec Zod - TODO: OrderItem et Review
+- [x] Gestion centralisée des erreurs
 - [ ] Authentification JWT
 - [ ] Système de gestion des commandes
 
