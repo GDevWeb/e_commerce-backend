@@ -59,6 +59,7 @@ model Customer {
   last_name                String
   date_of_birth            DateTime?
   email                    String        @unique
+  password                 String?       //Temporary added 15102025 - Schedule splitting Customer AND User session 14 RBAC
   phone_number             String
   address                  String
   is_active                Boolean       @default(true)

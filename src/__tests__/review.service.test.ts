@@ -1,6 +1,5 @@
 const prismaMock = {
   review: {
-    // Changed reviewItem to review
     findMany: jest.fn(),
     findUniqueOrThrow: jest.fn(),
     create: jest.fn(),

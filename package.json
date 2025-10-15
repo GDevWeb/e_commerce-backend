@@ -16,7 +16,8 @@
     "prisma:seed:products": "ts-node prisma/seed-products.ts",
     "prisma:seed:customers": "ts-node prisma/seed-customers.ts",
     "prisma:seed:orders": "ts-node prisma/seed-orders.ts",
-    "prisma:seed:reviews": "ts-node prisma/seed-reviews.ts"
+    "prisma:seed:reviews": "ts-node prisma/seed-reviews.ts",
+    "generate:secret-key": "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -26,9 +27,11 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.3",
     "@types/helmet": "^0.0.48",
     "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.7.0",
     "@types/winston": "^2.4.4",
@@ -45,9 +48,12 @@
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
-    "prisma": "^6.16.3"
+    "jsonwebtoken": "^9.0.2",
+    "prisma": "^6.16.3",
+    "uninstall": "^0.0.0"
   }
 }
