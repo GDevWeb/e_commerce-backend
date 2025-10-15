@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { ConflictError, UnauthorizedError } from "../../../errors";
+import { UnauthorizedError } from "../../../errors";
 import { PrismaClient } from "../../../generated/prisma";
 import { handlePrismaError } from "../../../utils/handlePrismaError";
 import {
@@ -10,92 +10,71 @@ import { AuthResponse } from "../authResponse.types";
 import { LoginInput, RegisterInput } from "../schema/auth.schema";
 
 const prisma = new PrismaClient();
-
-export const register = async (
-  input: RegisterInput
-): Promise<AuthResponse | undefined> => {
-  //fix any
+export const register = async (input: RegisterInput): Promise<AuthResponse> => {
   try {
-    const existingCustomer = await prisma.customer.findUnique({
-      where: { email: input.email },
-    });
+    const hashedPassword = await bcrypt.hash(input.password, 10);
 
-    if (existingCustomer) {
-      throw new ConflictError("Customer with this email already exists");
-    }
-
-    const hashedPassword = await bcrypt.hash(
-      input.password,
-      process.env.BCRYPT_ROUNDS as string
-    );
-
-    const customer = await prisma.customer.create({
+    const newUser = await prisma.customer.create({
       data: {
-        ...input,
+        email: input.email,
         password: hashedPassword,
-        phone_number: "",
-        address: "",
+        first_name: input.first_name,
+        last_name: input.last_name,
       },
     });
 
-    const accessToken = generateAccessToken(customer.id, customer.email);
-    const refreshToken = generateRefreshToken(customer.id);
+    const accessToken = generateAccessToken(newUser.id, newUser.email);
+    const refreshToken = generateRefreshToken(newUser.id);
 
     return {
       accessToken,
       refreshToken,
       user: {
-        id: customer.id,
-        email: customer.email,
-        first_name: customer.first_name,
-        last_name: customer.last_name,
+        id: newUser.id,
+        email: newUser.email,
+        first_name: newUser.first_name,
+        last_name: newUser.last_name,
       },
     };
   } catch (error) {
     handlePrismaError(error);
-    return undefined;
   }
+  throw new Error("Failed to register user");
 };
 
-export const login = async (
-  data: LoginInput
-): Promise<AuthResponse | undefined> => {
-  try {
-    const existingCustomer = await prisma.customer.findUnique({
-      where: { email: data.email },
-    });
-    if (!existingCustomer) {
-      throw new UnauthorizedError("Invalid credentials");
-    }
-    const comparePassword = await bcrypt.compare(
-      data.password,
-      existingCustomer.password as string
-    );
+export const login = async (input: LoginInput): Promise<AuthResponse> => {
+  const user = await prisma.customer.findUnique({
+    where: { email: input.email },
+  });
 
-    if (!comparePassword) {
-      throw new UnauthorizedError("Invalid credentials");
-    }
-
-    const accessToken = generateAccessToken(
-      existingCustomer.id,
-      existingCustomer.email
-    );
-    const refreshToken = generateRefreshToken(existingCustomer.id);
-
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: existingCustomer.id,
-        email: existingCustomer.email,
-        first_name: existingCustomer.first_name,
-        last_name: existingCustomer.last_name,
-      },
-    };
-  } catch (error) {
-    handlePrismaError(error);
-    return undefined;
+  if (!user) {
+    throw new UnauthorizedError("Invalid credentials");
   }
-};
 
-export const logout = () => {};
+  if (!user.password) {
+    throw new UnauthorizedError("Account has no password set");
+  }
+
+  const isValidPassword = await bcrypt.compare(
+    input.password,
+    user.password as string
+  );
+
+  if (!isValidPassword) {
+    throw new UnauthorizedError("Invalid credentials");
+  }
+
+  const accessToken = generateAccessToken(user.id, user.email);
+  const refreshToken = generateRefreshToken(user.id);
+
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+    },
+  };
+};
