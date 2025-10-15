@@ -1,7 +1,7 @@
 import {
   generateAccessToken,
   generateRefreshToken,
-} from "../../utils/jwt.utils";
+} from "../../../utils/jwt.utils";
 
 const accessToken = generateAccessToken(1, "test@example.com");
 const refreshToken = generateRefreshToken(1);
