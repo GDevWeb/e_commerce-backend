@@ -16,7 +16,8 @@
     "prisma:seed:products": "ts-node prisma/seed-products.ts",
     "prisma:seed:customers": "ts-node prisma/seed-customers.ts",
     "prisma:seed:orders": "ts-node prisma/seed-orders.ts",
-    "prisma:seed:reviews": "ts-node prisma/seed-reviews.ts"
+    "prisma:seed:reviews": "ts-node prisma/seed-reviews.ts",
+    "generate:secret-key": "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
