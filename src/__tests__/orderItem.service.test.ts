@@ -1,4 +1,4 @@
-const prismaMock = {
+export const prismaMock = {
   orderItem: {
     findMany: jest.fn(),
     findUniqueOrThrow: jest.fn(),
