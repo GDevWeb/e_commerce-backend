@@ -10,6 +10,7 @@ import customerRouter from "./routes/customer.routes";
 import orderRouter from "./routes/order.routes";
 import orderItemRouter from "./routes/orderItem.routes";
 import productRouter from "./routes/product.routes";
+import reviewRouter from "./routes/review.routes";
 import logger from "./utils/logger";
 
 dotenv.config();
@@ -26,12 +27,13 @@ server.use(express.urlencoded({ extended: true }));
 
 server.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-server.use("/api/products", productRouter);
 server.use("/api/categories", categoryRouter);
 server.use("/api/brands", brandRouter);
+server.use("/api/products", productRouter);
 server.use("/api/customers", customerRouter);
 server.use("/api/orders", orderRouter);
 server.use("/api/orderItems", orderItemRouter);
+server.use("/api/reviews", reviewRouter);
 
 server.get("/", (req: Request, res: Response) => {
   res.status(200).send("e_commerce API is running");
