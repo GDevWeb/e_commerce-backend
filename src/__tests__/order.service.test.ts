@@ -27,7 +27,7 @@ jest.mock("../generated/prisma", () => ({
   },
 }));
 
-import { OrderStatus, Prisma } from "../generated/prisma";
+import { Prisma } from "../generated/prisma";
 import * as orderService from "../services/order.service";
 
 describe("Order Service", () => {
@@ -116,12 +116,14 @@ describe("Order Service", () => {
           create: [{ product_id: 1, quantity: 2, price: 99.99 }],
         },
         total: 199.98,
-        status: OrderStatus.PENDING,
+        status: "PENDING",
       };
+
       prismaMock.order.create.mockResolvedValue(mockOrder);
 
-      const result = await orderService.createOrder(newOrderData);
+      const result = await orderService.createOrder(newOrderData as any);
 
+      // Vérifier les assertions
       expect(result).toEqual(mockOrder);
       expect(prismaMock.order.create).toHaveBeenCalledWith({
         data: newOrderData,
@@ -131,8 +133,10 @@ describe("Order Service", () => {
 
   describe("updateOrder", () => {
     it("should update and return the order", async () => {
-      const updateData = { status: OrderStatus.SHIPPED };
-      const updatedOrder = { ...mockOrder, status: OrderStatus.SHIPPED };
+      const updateData: Prisma.OrderUpdateInput = {
+        status: "SHIPPED",
+      };
+      const updatedOrder = { ...mockOrder, status: "SHIPPED" };
       prismaMock.order.update.mockResolvedValue(updatedOrder);
 
       const result = await orderService.updateOrder(1, updateData);

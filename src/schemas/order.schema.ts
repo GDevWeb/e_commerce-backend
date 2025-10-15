@@ -5,7 +5,14 @@ const OrderSchema = z.object({
   customer_id: z.number().int().positive(),
   order_date: z.date().optional(),
   total: z.number().positive(),
-  status: z.enum(["PENDING", "SHIPPED", "DELIVERED", "CANCELLED"]),
+  status: z.enum([
+    "PENDING",
+    "PROCESSING",
+    "SHIPPED",
+    "DELIVERED",
+    "CANCELLED",
+    "REFUNDED",
+  ]),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });
