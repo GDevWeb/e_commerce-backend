@@ -13,6 +13,7 @@
   "exclude": ["node_modules"],
   "include": [
     "src/**/*.ts",
+    "src/types/*.ts",
     "src/types/express/index.d.ts",
     "prisma/seed-customers.ts",
     "prisma/seed-products.ts"

@@ -1,12 +1,13 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Response } from "express";
 import { UnauthorizedError } from "../errors";
 import { PrismaClient } from "../generated/prisma";
+import { AuthRequest } from "../types/auth.types";
 import { verifyToken } from "../utils/jwt.utils";
 
 const prisma = new PrismaClient();
 
 export const authMiddleware = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {

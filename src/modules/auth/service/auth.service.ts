@@ -2,13 +2,18 @@ import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import { UnauthorizedError } from "../../../errors";
 import { PrismaClient } from "../../../generated/prisma";
+import { UserProfile } from "../../../types/user.types";
 import { handlePrismaError } from "../../../utils/handlePrismaError";
 import {
   generateAccessToken,
   generateRefreshToken,
 } from "../../../utils/jwt.utils";
 import { AuthResponse } from "../authResponse.types";
-import { LoginInput, RegisterInput } from "../schema/auth.schema";
+import {
+  LoginInput,
+  RegisterInput,
+  UpdateProfileInput,
+} from "../schema/auth.schema";
 
 dotenv.config();
 
@@ -84,24 +89,50 @@ export const login = async (input: LoginInput): Promise<AuthResponse> => {
   };
 };
 
-export const getProfile = async (userId: number): Promise<AuthResponse> => {
-  const user = await prisma.customer.findUnique({ where: { id: userId } });
+export const getProfile = async (userId: number): Promise<UserProfile> => {
+  const user = await prisma.customer.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      first_name: true,
+      last_name: true,
+      phone_number: true,
+      address: true,
+    },
+  });
 
   if (!user) {
     throw new UnauthorizedError("User not found");
   }
 
-  const accessToken = generateAccessToken(user.id, user.email);
-  const refreshToken = generateRefreshToken(user.id);
+  return user;
+};
 
-  return {
-    accessToken,
-    refreshToken,
-    user: {
-      id: user.id,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
+export const updateProfile = async (
+  userId: number,
+  data: UpdateProfileInput
+): Promise<UserProfile> => {
+  const user = await prisma.customer.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new UnauthorizedError("User not found");
+  }
+
+  const updatedUser = await prisma.customer.update({
+    where: { id: userId },
+    data: data,
+    select: {
+      id: true,
+      email: true,
+      first_name: true,
+      last_name: true,
+      phone_number: true,
+      address: true,
     },
-  };
+  });
+
+  return updatedUser;
 };

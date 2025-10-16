@@ -12,9 +12,12 @@ export const RegisterSchema = z.object({
         passwordRegex,
         "Password must contain at least one uppercase letter, one lowercase letter, and one number"
       ),
-    first_name: z.string().min(1, "First name is required").trim(),
-    last_name: z.string().min(1, "Last name is required").trim(),
-    phone_number: z.string().optional(),
+    first_name: z.string().min(2, "First name is required").trim(),
+    last_name: z.string().min(2, "Last name is required").trim(),
+    phone_number: z
+      .string()
+      .min(10, "Phone number must be at least 10 characters")
+      .optional(),
     address: z.string().optional(),
   }),
   params: z.object({}),
@@ -30,5 +33,22 @@ export const LoginSchema = z.object({
   query: z.object({}),
 });
 
+export const UpdateProfileSchema = z.object({
+  body: z
+    .object({
+      first_name: z.string().min(2, "First name is required").trim(),
+      last_name: z.string().min(2, "Last name is required").trim(),
+      phone_number: z
+        .string()
+        .min(10, "Phone number must be at least 10 characters")
+        .optional(),
+      address: z.string().optional(),
+    })
+    .partial(),
+  params: z.object({}),
+  query: z.object({}),
+});
+
 export type RegisterInput = z.infer<typeof RegisterSchema>["body"];
 export type LoginInput = z.infer<typeof LoginSchema>["body"];
+export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>["body"];
