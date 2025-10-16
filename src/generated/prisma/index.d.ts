@@ -1874,8 +1874,8 @@ export namespace Prisma {
     date_of_birth: Date | null
     email: string
     password: string | null
-    phone_number: string
-    address: string
+    phone_number: string | null
+    address: string | null
     is_active: boolean
     last_purchase_date: Date | null
     total_orders: number
@@ -2006,8 +2006,8 @@ export namespace Prisma {
       date_of_birth: Date | null
       email: string
       password: string | null
-      phone_number: string
-      address: string
+      phone_number: string | null
+      address: string | null
       is_active: boolean
       last_purchase_date: Date | null
       total_orders: number
@@ -10058,8 +10058,8 @@ export namespace Prisma {
     date_of_birth?: DateTimeNullableFilter<"Customer"> | Date | string | null
     email?: StringFilter<"Customer"> | string
     password?: StringNullableFilter<"Customer"> | string | null
-    phone_number?: StringFilter<"Customer"> | string
-    address?: StringFilter<"Customer"> | string
+    phone_number?: StringNullableFilter<"Customer"> | string | null
+    address?: StringNullableFilter<"Customer"> | string | null
     is_active?: BoolFilter<"Customer"> | boolean
     last_purchase_date?: DateTimeNullableFilter<"Customer"> | Date | string | null
     total_orders?: IntFilter<"Customer"> | number
@@ -10079,8 +10079,8 @@ export namespace Prisma {
     date_of_birth?: SortOrderInput | SortOrder
     email?: SortOrder
     password?: SortOrderInput | SortOrder
-    phone_number?: SortOrder
-    address?: SortOrder
+    phone_number?: SortOrderInput | SortOrder
+    address?: SortOrderInput | SortOrder
     is_active?: SortOrder
     last_purchase_date?: SortOrderInput | SortOrder
     total_orders?: SortOrder
@@ -10103,8 +10103,8 @@ export namespace Prisma {
     last_name?: StringFilter<"Customer"> | string
     date_of_birth?: DateTimeNullableFilter<"Customer"> | Date | string | null
     password?: StringNullableFilter<"Customer"> | string | null
-    phone_number?: StringFilter<"Customer"> | string
-    address?: StringFilter<"Customer"> | string
+    phone_number?: StringNullableFilter<"Customer"> | string | null
+    address?: StringNullableFilter<"Customer"> | string | null
     is_active?: BoolFilter<"Customer"> | boolean
     last_purchase_date?: DateTimeNullableFilter<"Customer"> | Date | string | null
     total_orders?: IntFilter<"Customer"> | number
@@ -10124,8 +10124,8 @@ export namespace Prisma {
     date_of_birth?: SortOrderInput | SortOrder
     email?: SortOrder
     password?: SortOrderInput | SortOrder
-    phone_number?: SortOrder
-    address?: SortOrder
+    phone_number?: SortOrderInput | SortOrder
+    address?: SortOrderInput | SortOrder
     is_active?: SortOrder
     last_purchase_date?: SortOrderInput | SortOrder
     total_orders?: SortOrder
@@ -10151,8 +10151,8 @@ export namespace Prisma {
     date_of_birth?: DateTimeNullableWithAggregatesFilter<"Customer"> | Date | string | null
     email?: StringWithAggregatesFilter<"Customer"> | string
     password?: StringNullableWithAggregatesFilter<"Customer"> | string | null
-    phone_number?: StringWithAggregatesFilter<"Customer"> | string
-    address?: StringWithAggregatesFilter<"Customer"> | string
+    phone_number?: StringNullableWithAggregatesFilter<"Customer"> | string | null
+    address?: StringNullableWithAggregatesFilter<"Customer"> | string | null
     is_active?: BoolWithAggregatesFilter<"Customer"> | boolean
     last_purchase_date?: DateTimeNullableWithAggregatesFilter<"Customer"> | Date | string | null
     total_orders?: IntWithAggregatesFilter<"Customer"> | number
@@ -10584,8 +10584,8 @@ export namespace Prisma {
     date_of_birth?: Date | string | null
     email: string
     password?: string | null
-    phone_number: string
-    address: string
+    phone_number?: string | null
+    address?: string | null
     is_active?: boolean
     last_purchase_date?: Date | string | null
     total_orders?: number
@@ -10605,8 +10605,8 @@ export namespace Prisma {
     date_of_birth?: Date | string | null
     email: string
     password?: string | null
-    phone_number: string
-    address: string
+    phone_number?: string | null
+    address?: string | null
     is_active?: boolean
     last_purchase_date?: Date | string | null
     total_orders?: number
@@ -10625,8 +10625,8 @@ export namespace Prisma {
     date_of_birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     email?: StringFieldUpdateOperationsInput | string
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    phone_number?: StringFieldUpdateOperationsInput | string
-    address?: StringFieldUpdateOperationsInput | string
+    phone_number?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
     is_active?: BoolFieldUpdateOperationsInput | boolean
     last_purchase_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     total_orders?: IntFieldUpdateOperationsInput | number
@@ -10646,8 +10646,8 @@ export namespace Prisma {
     date_of_birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     email?: StringFieldUpdateOperationsInput | string
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    phone_number?: StringFieldUpdateOperationsInput | string
-    address?: StringFieldUpdateOperationsInput | string
+    phone_number?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
     is_active?: BoolFieldUpdateOperationsInput | boolean
     last_purchase_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     total_orders?: IntFieldUpdateOperationsInput | number
@@ -10667,8 +10667,8 @@ export namespace Prisma {
     date_of_birth?: Date | string | null
     email: string
     password?: string | null
-    phone_number: string
-    address: string
+    phone_number?: string | null
+    address?: string | null
     is_active?: boolean
     last_purchase_date?: Date | string | null
     total_orders?: number
@@ -10685,8 +10685,8 @@ export namespace Prisma {
     date_of_birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     email?: StringFieldUpdateOperationsInput | string
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    phone_number?: StringFieldUpdateOperationsInput | string
-    address?: StringFieldUpdateOperationsInput | string
+    phone_number?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
     is_active?: BoolFieldUpdateOperationsInput | boolean
     last_purchase_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     total_orders?: IntFieldUpdateOperationsInput | number
@@ -10704,8 +10704,8 @@ export namespace Prisma {
     date_of_birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     email?: StringFieldUpdateOperationsInput | string
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    phone_number?: StringFieldUpdateOperationsInput | string
-    address?: StringFieldUpdateOperationsInput | string
+    phone_number?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
     is_active?: BoolFieldUpdateOperationsInput | boolean
     last_purchase_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     total_orders?: IntFieldUpdateOperationsInput | number
@@ -12928,8 +12928,8 @@ export namespace Prisma {
     date_of_birth?: Date | string | null
     email: string
     password?: string | null
-    phone_number: string
-    address: string
+    phone_number?: string | null
+    address?: string | null
     is_active?: boolean
     last_purchase_date?: Date | string | null
     total_orders?: number
@@ -12948,8 +12948,8 @@ export namespace Prisma {
     date_of_birth?: Date | string | null
     email: string
     password?: string | null
-    phone_number: string
-    address: string
+    phone_number?: string | null
+    address?: string | null
     is_active?: boolean
     last_purchase_date?: Date | string | null
     total_orders?: number
@@ -13010,8 +13010,8 @@ export namespace Prisma {
     date_of_birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     email?: StringFieldUpdateOperationsInput | string
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    phone_number?: StringFieldUpdateOperationsInput | string
-    address?: StringFieldUpdateOperationsInput | string
+    phone_number?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
     is_active?: BoolFieldUpdateOperationsInput | boolean
     last_purchase_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     total_orders?: IntFieldUpdateOperationsInput | number
@@ -13030,8 +13030,8 @@ export namespace Prisma {
     date_of_birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     email?: StringFieldUpdateOperationsInput | string
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    phone_number?: StringFieldUpdateOperationsInput | string
-    address?: StringFieldUpdateOperationsInput | string
+    phone_number?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
     is_active?: BoolFieldUpdateOperationsInput | boolean
     last_purchase_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     total_orders?: IntFieldUpdateOperationsInput | number
@@ -13233,8 +13233,8 @@ export namespace Prisma {
     date_of_birth?: Date | string | null
     email: string
     password?: string | null
-    phone_number: string
-    address: string
+    phone_number?: string | null
+    address?: string | null
     is_active?: boolean
     last_purchase_date?: Date | string | null
     total_orders?: number
@@ -13253,8 +13253,8 @@ export namespace Prisma {
     date_of_birth?: Date | string | null
     email: string
     password?: string | null
-    phone_number: string
-    address: string
+    phone_number?: string | null
+    address?: string | null
     is_active?: boolean
     last_purchase_date?: Date | string | null
     total_orders?: number
@@ -13330,8 +13330,8 @@ export namespace Prisma {
     date_of_birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     email?: StringFieldUpdateOperationsInput | string
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    phone_number?: StringFieldUpdateOperationsInput | string
-    address?: StringFieldUpdateOperationsInput | string
+    phone_number?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
     is_active?: BoolFieldUpdateOperationsInput | boolean
     last_purchase_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     total_orders?: IntFieldUpdateOperationsInput | number
@@ -13350,8 +13350,8 @@ export namespace Prisma {
     date_of_birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     email?: StringFieldUpdateOperationsInput | string
     password?: NullableStringFieldUpdateOperationsInput | string | null
-    phone_number?: StringFieldUpdateOperationsInput | string
-    address?: StringFieldUpdateOperationsInput | string
+    phone_number?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: NullableStringFieldUpdateOperationsInput | string | null
     is_active?: BoolFieldUpdateOperationsInput | boolean
     last_purchase_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     total_orders?: IntFieldUpdateOperationsInput | number

@@ -81,12 +81,13 @@
 
 **Goal: Register + Login**
 
-- [ ] Install: `npm install jsonwebtoken bcrypt` + types
-- [ ] Create `AuthService` (register, login)
-- [ ] Hash passwords with bcrypt
-- [ ] Generate JWT tokens
-- [ ] Routes: `POST /api/auth/register`, `POST /api/auth/login`
-- [ ] **Deliverable**: Users can register and login
+- [x] Install: `npm install jsonwebtoken bcrypt` + types
+- [x] Create `AuthService` (register, login)
+- [x] Hash passwords with bcrypt
+- [x] Generate JWT tokens
+- [x] Routes: `POST /api/auth/register`, `POST /api/auth/login`
+- [x] **Deliverable**: Users can register and login
+- [ ] **Test**: Jest test for register and login
 
 **Estimated time: 4h**
 

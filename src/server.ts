@@ -4,6 +4,7 @@ import path from "path";
 import { PrismaClient } from "./generated/prisma";
 import { errorHandler } from "./middlewares/errorHandler";
 import { configureSecurityMiddlewares } from "./middlewares/security";
+import authRouter from "./routes/auth.routes";
 import brandRouter from "./routes/brand.routes";
 import categoryRouter from "./routes/category.routes";
 import customerRouter from "./routes/customer.routes";
@@ -34,6 +35,7 @@ server.use("/api/customers", customerRouter);
 server.use("/api/orders", orderRouter);
 server.use("/api/orderItems", orderItemRouter);
 server.use("/api/reviews", reviewRouter);
+server.use("/api/auth", authRouter);
 
 server.get("/", (req: Request, res: Response) => {
   res.status(200).send("e_commerce API is running");
