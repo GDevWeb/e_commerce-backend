@@ -83,3 +83,25 @@ export const login = async (input: LoginInput): Promise<AuthResponse> => {
     },
   };
 };
+
+export const getProfile = async (userId: number): Promise<AuthResponse> => {
+  const user = await prisma.customer.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    throw new UnauthorizedError("User not found");
+  }
+
+  const accessToken = generateAccessToken(user.id, user.email);
+  const refreshToken = generateRefreshToken(user.id);
+
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+    },
+  };
+};
