@@ -1,5 +1,13 @@
-declare namespace Express {
-  export interface Request {
-    file?: Express.Multer.File;
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        userId: number;
+        email: string;
+      };
+      file?: Express.Multer.File;
+    }
   }
 }
+
+export {};

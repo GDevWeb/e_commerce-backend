@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import dotenv from "dotenv";
 import { UnauthorizedError } from "../../../errors";
 import { PrismaClient } from "../../../generated/prisma";
 import { handlePrismaError } from "../../../utils/handlePrismaError";
@@ -9,10 +10,14 @@ import {
 import { AuthResponse } from "../authResponse.types";
 import { LoginInput, RegisterInput } from "../schema/auth.schema";
 
+dotenv.config();
+
 const prisma = new PrismaClient();
+const BCRYPT_ROUNDS = process.env.BCRYPT_ROUNDS as string;
+
 export const register = async (input: RegisterInput): Promise<AuthResponse> => {
   try {
-    const hashedPassword = await bcrypt.hash(input.password, 10);
+    const hashedPassword = await bcrypt.hash(input.password, BCRYPT_ROUNDS);
 
     const newUser = await prisma.customer.create({
       data: {
