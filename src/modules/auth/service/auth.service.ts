@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
+import ms from "ms";
 import { UnauthorizedError } from "../../../errors";
 import { PrismaClient } from "../../../generated/prisma";
 import { UserProfile } from "../../../types/user.types";
@@ -7,18 +8,20 @@ import { handlePrismaError } from "../../../utils/handlePrismaError";
 import {
   generateAccessToken,
   generateRefreshToken,
+  verifyToken,
 } from "../../../utils/jwt.utils";
 import { AuthResponse } from "../authResponse.types";
 import {
   LoginInput,
   RegisterInput,
   UpdateProfileInput,
-} from "../schema/auth.schema";
+} from "../schema/auth.schema"; // Removed unused 'error' import
 
 dotenv.config();
 
 const prisma = new PrismaClient();
 const BCRYPT_ROUNDS = process.env.BCRYPT_ROUNDS as string;
+console.log(BCRYPT_ROUNDS);
 
 export const register = async (input: RegisterInput): Promise<AuthResponse> => {
   try {
@@ -35,6 +38,9 @@ export const register = async (input: RegisterInput): Promise<AuthResponse> => {
 
     const accessToken = generateAccessToken(newUser.id, newUser.email);
     const refreshToken = generateRefreshToken(newUser.id);
+
+    // Storing refresh token in DB
+    await saveRefreshToken(newUser.id, refreshToken);
 
     return {
       accessToken,
@@ -76,6 +82,11 @@ export const login = async (input: LoginInput): Promise<AuthResponse> => {
 
   const accessToken = generateAccessToken(user.id, user.email);
   const refreshToken = generateRefreshToken(user.id);
+
+  // Optional but important fro security Deleting the older tokens
+  await prisma.refreshToken.deleteMany({ where: { userId: user.id } });
+  // Limiting the number of active sessions
+  await saveRefreshToken(user.id, refreshToken);
 
   return {
     accessToken,
@@ -135,4 +146,90 @@ export const updateProfile = async (
   });
 
   return updatedUser;
+};
+
+export const saveRefreshToken = async (
+  userId: number,
+  token: string
+): Promise<void> => {
+  const jwtRefreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "30d";
+  console.info("jwtRefreshExpiresIn:", jwtRefreshExpiresIn);
+
+  const milliseconds = ms(jwtRefreshExpiresIn as ms.StringValue);
+  const expiresAt = new Date(Date.now() + milliseconds);
+
+  console.info("Saving refresh token, expires at:", expiresAt);
+
+  await prisma.refreshToken.create({
+    data: {
+      token,
+      userId,
+      expiresAt,
+    },
+  });
+};
+
+export const refreshTokenAccess = async (
+  refreshToken: string
+): Promise<{ accessToken: string; refreshToken?: string }> => {
+  try {
+    const decoded = verifyToken(refreshToken, true);
+
+    const existingRefreshToken = await prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+    });
+
+    if (!existingRefreshToken) {
+      console.error("❌ Token not found in database");
+      throw new UnauthorizedError("Refresh token already used or revoked");
+    }
+
+    const storedToken = existingRefreshToken.expiresAt;
+    const today = new Date();
+
+    console.log("🔍 Token expiration check:", {
+      expiresAt: storedToken,
+      now: today,
+      isExpired: storedToken.getTime() < today.getTime(),
+    });
+
+    if (storedToken.getTime() < today.getTime()) {
+      console.error("❌ Token expired (Database)");
+      await prisma.refreshToken.delete({
+        where: { token: refreshToken },
+      });
+      throw new UnauthorizedError("Refresh token expired (DB-check)");
+    }
+
+    const existingUser = await prisma.customer.findUnique({
+      where: { id: decoded.userId },
+    });
+
+    if (!existingUser) {
+      console.error("❌ User not found:", decoded.userId);
+      throw new UnauthorizedError("User linked to refresh token not found");
+    }
+
+    const newAccessToken = generateAccessToken(
+      existingUser.id,
+      existingUser.email
+    );
+    await prisma.refreshToken.delete({ where: { token: refreshToken } });
+    const newRefreshToken = generateRefreshToken(existingUser.id);
+    await saveRefreshToken(existingUser.id, newRefreshToken);
+
+    console.log("✅ Token refresh successful for user:", existingUser.id);
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    };
+  } catch (error) {
+    console.error("❌ refreshTokenAccess error:", error);
+
+    if ((error as any).isOperational === true) {
+      throw error;
+    }
+    throw new UnauthorizedError("Invalid refresh token (unforeseen issue)");
+  }
 };

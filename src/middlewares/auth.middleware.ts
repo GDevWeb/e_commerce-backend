@@ -12,12 +12,14 @@ export const authMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // 1.header
     const header = req.headers.authorization;
 
     if (!header || !header.startsWith("Bearer ")) {
       throw new UnauthorizedError("Authentication required");
     }
 
+    // 2.token
     const token = header.split(" ")[1];
 
     if (!token) {
@@ -34,6 +36,7 @@ export const authMiddleware = async (
       throw new UnauthorizedError("Invalid token");
     }
 
+    // 3.decoded token
     const { userId, email } = decoded;
 
     const user = await prisma.customer.findUnique({

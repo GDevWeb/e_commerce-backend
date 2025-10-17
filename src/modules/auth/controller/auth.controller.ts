@@ -36,3 +36,15 @@ export const updateProfile = asyncHandler(
     });
   }
 );
+
+export const refreshToken = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { refreshToken } = req.body;
+    const authResponse = await authService.refreshTokenAccess(refreshToken);
+
+    res.status(200).json({
+      message: "Access token refreshed successfully",
+      data: authResponse,
+    });
+  }
+);
