@@ -15,7 +15,7 @@ import {
 } from "../modules/auth/schema/auth.schema";
 import { RefreshTokenSchema } from "../schemas/auth.refresh.schema";
 
-// ✅ AJOUTE CES LOGS ICI
+// ✅ Debug log
 console.log("=== DEBUG SCHEMAS ===");
 console.log("RefreshTokenSchema defined?", RefreshTokenSchema !== undefined);
 console.log("=== FIN DEBUG ===");
