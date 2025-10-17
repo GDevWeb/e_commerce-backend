@@ -1,224 +1,127 @@
-import { Request, Response } from "express";
-import { Product } from "../generated/prisma";
 import * as productService from "../services/product.service";
+import { asyncHandler } from "../utils/asyncHandler";
+import { generateSKU } from "../utils/product.utils";
 
-export const getAllProducts = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const page = parseInt(req.query.page as string) || 1;
-  const pageSize = parseInt(req.query.pageSize as string) || 10;
+export const getAllProducts = asyncHandler(async (req, res) => {
   const filters = {
     name: req.query.name as string,
     category: req.query.category as string,
     brand: req.query.brand as string,
+    minPrice: req.query.minPrice
+      ? parseFloat(req.query.minPrice as string)
+      : undefined,
+    maxPrice: req.query.maxPrice
+      ? parseFloat(req.query.maxPrice as string)
+      : undefined,
+    page: req.query.page ? parseInt(req.query.page as string) : 1,
+    pageSize: req.query.pageSize ? parseInt(req.query.pageSize as string) : 10,
   };
 
-  try {
-    const products = await productService.getAllProducts(
-      page,
-      pageSize,
-      filters
-    );
+  const result = await productService.getAllProducts(filters);
 
-    if (products.length === 0) {
-      res.status(404).json({ message: "No products found" });
-      return;
-    }
+  res.status(200).json({
+    status: "success",
+    results: result.products.length,
+    data: result.products,
+    pagination: result.pagination,
+  });
+});
 
-    res.status(200).json(products);
-  } catch (error) {
-    console.error("Error fetching products:", error);
-    res.status(500).json({ message: "Internal server error" });
+export const getProduct = asyncHandler(async (req, res) => {
+  const productId = parseInt(req.params.id);
+
+  const product = await productService.getProductById(productId);
+
+  res.status(200).json({
+    status: "success",
+    data: product,
+  });
+});
+
+export const createProduct = asyncHandler(async (req, res) => {
+  const imageUrl =
+    req.file?.path?.replace(/\\/g, "/") || "https://placehold.co/300x200";
+
+  const {
+    name,
+    description,
+    weight,
+    price,
+    stock_quantity,
+    category_id,
+    brand_id,
+  } = req.body;
+
+  const sku = generateSKU(name);
+
+  const newProduct = await productService.createProduct({
+    name,
+    sku,
+    imageUrl,
+    description,
+    weight: weight ? parseFloat(weight) : undefined,
+    price: parseFloat(price),
+    stock_quantity: parseInt(stock_quantity),
+    category: { connect: { id: parseInt(category_id) } },
+    brand: { connect: { id: parseInt(brand_id) } },
+  });
+
+  res.status(201).json({
+    status: "success",
+    message: "Product created successfully",
+    data: newProduct,
+  });
+});
+
+export const updateProduct = asyncHandler(async (req, res) => {
+  const productId = parseInt(req.params.id);
+
+  const {
+    name,
+    description,
+    weight,
+    price,
+    stock_quantity,
+    category_id,
+    brand_id,
+    imageUrl,
+  } = req.body;
+
+  const data: any = {};
+
+  if (name !== undefined) data.name = name;
+  if (description !== undefined) data.description = description;
+  if (weight !== undefined) data.weight = parseFloat(weight);
+  if (price !== undefined) data.price = parseFloat(price);
+  if (stock_quantity !== undefined)
+    data.stock_quantity = parseInt(stock_quantity);
+  if (imageUrl !== undefined) data.imageUrl = imageUrl;
+
+  if (category_id !== undefined) {
+    data.category = { connect: { id: parseInt(category_id) } };
   }
-};
 
-export const getProduct = async (
-  req: Request,
-  res: Response
-): Promise<Product | undefined> => {
-  try {
-    const productId = Number(req.params.productId);
-
-    if (isNaN(productId) || productId <= 0) {
-      res.status(400).json({ message: "Product ID must be a positive number" });
-      return;
-    }
-
-    const product = await productService.getProductById(productId);
-
-    if (!product) {
-      res.status(404).json({ message: "Product not found" });
-      return;
-    }
-
-    res.status(200).json(product);
-  } catch (error) {
-    console.error("Error fetching product:", error);
-    res.status(500).json({ message: "Internal server error" });
+  if (brand_id !== undefined) {
+    data.brand = { connect: { id: parseInt(brand_id) } };
   }
-};
 
-export const createProduct = async (
-  req: Request,
-  res: Response
-): Promise<Partial<Product> | void> => {
-  try {
-    const { name, category_id, price, stock_quantity } = req.body;
+  const updatedProduct = await productService.updateProduct(productId, data);
 
-    if (!name || !category_id || !price || !stock_quantity) {
-      res.status(400).json({ message: "All fields are required" });
-      return;
-    }
+  res.status(200).json({
+    status: "success",
+    message: "Product updated successfully",
+    data: updatedProduct,
+  });
+});
 
-    if (typeof name !== "string" || name.trim() === "") {
-      res
-        .status(400)
-        .json({ message: "Product name must be a non-empty string" });
-      return;
-    }
-    if (typeof category_id !== "number" || category_id <= 0) {
-      res
-        .status(400)
-        .json({ message: "Category ID must be a positive number" });
-      return;
-    }
-    if (typeof price !== "number" || price <= 0) {
-      res.status(400).json({ message: "Price must be a positive number" });
-      return;
-    }
-    if (typeof stock_quantity !== "number" || stock_quantity < 0) {
-      res
-        .status(400)
-        .json({ message: "Stock quantity must be a non-negative number" });
-      return;
-    }
+export const deleteProduct = asyncHandler(async (req, res): Promise<void> => {
+  const productId = parseInt(req.params.id);
 
-    const data = {
-      name,
-      category_id,
-      price,
-      stock_quantity,
-    };
+  const deletedProduct = await productService.deleteProduct(productId);
 
-    const newProduct = await productService.createProduct({
-      name: data.name,
-      price: data.price,
-      stock_quantity: data.stock_quantity,
-      category: { connect: { id: data.category_id } },
-      sku: "",
-    });
-
-    res.status(201).json(newProduct);
-  } catch (error) {
-    console.error("Error creating product:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const deleteProduct = async (req: Request, res: Response) => {
-  try {
-    const productId = Number(req.params.productId);
-
-    if (isNaN(productId) || productId <= 0) {
-      res.status(400).json({ message: "Brand ID must be a positive number" });
-      return;
-    }
-
-    const product = await productService.deleteProduct(productId);
-
-    if (!product) {
-      res.status(404).json({
-        message: `Product with ID ${productId} not found`,
-      });
-      return;
-    }
-
-    res.status(200).json({
-      message: `Product with ID ${productId} deleted successfully`,
-      product,
-    });
-  } catch (error) {
-    console.error("Error deleting product:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const updateProduct = async (
-  req: Request,
-  res: Response
-): Promise<Product | void> => {
-  try {
-    const productId = Number(req.params.productId);
-
-    if (isNaN(productId) || productId <= 0) {
-      res.status(400).json({ message: "Product ID must be a positive number" });
-      return;
-    }
-
-    const existingProduct = await productService.getProductById(productId);
-
-    if (!existingProduct) {
-      res.status(404).json({ message: "Product not found" });
-      return;
-    }
-
-    const { name, category_id, price, stock_quantity } = req.body;
-
-    if (!name && !category_id && !price && !stock_quantity) {
-      res.status(400).json({ message: "No update data provided" });
-      return;
-    }
-
-    if (
-      name !== undefined &&
-      (typeof name !== "string" || name.trim() === "")
-    ) {
-      res
-        .status(400)
-        .json({ message: "Product name must be a non-empty string" });
-      return;
-    }
-    if (
-      category_id !== undefined &&
-      (typeof category_id !== "number" || category_id <= 0)
-    ) {
-      res
-        .status(400)
-        .json({ message: "Category ID must be a positive number" });
-      return;
-    }
-    if (price !== undefined && (typeof price !== "number" || price <= 0)) {
-      res.status(400).json({ message: "Price must be a positive number" });
-      return;
-    }
-    if (
-      stock_quantity !== undefined &&
-      (typeof stock_quantity !== "number" || stock_quantity < 0)
-    ) {
-      res
-        .status(400)
-        .json({ message: "Stock quantity must be a non-negative number" });
-      return;
-    }
-
-    const data = {
-      name: name !== undefined ? name : existingProduct.name,
-      category:
-        category_id !== undefined
-          ? { connect: { id: category_id } }
-          : undefined,
-      price: price !== undefined ? price : existingProduct.price,
-      stock_quantity:
-        stock_quantity !== undefined
-          ? stock_quantity
-          : existingProduct.stock_quantity,
-    };
-
-    const updatedProduct = await productService.updateProduct(productId, data);
-    res.status(200).json(updatedProduct);
-  } catch (error) {
-    console.error("Error deleting product:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
+  res.status(200).json({
+    status: "success",
+    message: "Product deleted successfully",
+    data: deletedProduct,
+  });
+});

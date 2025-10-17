@@ -1,0 +1,107 @@
+sequenceDiagram
+    actor User
+    participant API as Express API
+    participant AuthCtrl as AuthController
+    participant AuthService as AuthService
+    participant Bcrypt as Bcrypt
+    participant JWT as JsonWebToken
+    participant Prisma as Prisma ORM
+    participant DB as PostgreSQL
+
+    rect rgb(200, 220, 250)
+    Note over User,DB: INSCRIPTION (REGISTER)
+    User->>API: POST /api/auth/register
+    Note over User,API: Body: { email, password, first_name, last_name, ... }
+    
+    API->>AuthCtrl: register(req, res)
+    AuthCtrl->>AuthService: registerUser(userData)
+    
+    AuthService->>Prisma: prisma.customer.findUnique({ where: { email } })
+    Prisma->>DB: SELECT * FROM customers WHERE email = ?
+    
+    alt Email existe déjà
+        DB-->>Prisma: Customer found
+        Prisma-->>AuthService: Customer exists
+        AuthService-->>AuthCtrl: EmailExistsError
+        AuthCtrl-->>User: 409 Conflict
+    else Email disponible
+        DB-->>Prisma: null
+        
+        AuthService->>Bcrypt: hash(password, saltRounds: 10)
+        Bcrypt-->>AuthService: hashedPassword
+        
+        AuthService->>Prisma: prisma.customer.create({ data: {..., password: hashed} })
+        Prisma->>DB: INSERT INTO customers (...)
+        DB-->>Prisma: Customer created (id: 1)
+        Prisma-->>AuthService: Customer object
+        
+        AuthService->>JWT: sign({ userId, email }, SECRET, { expiresIn: '7d' })
+        JWT-->>AuthService: token
+        
+        AuthService-->>AuthCtrl: { customer, token }
+        AuthCtrl-->>User: 201 Created + { customer, token }
+    end
+    end
+
+    rect rgb(250, 220, 200)
+    Note over User,DB: CONNEXION (LOGIN)
+    User->>API: POST /api/auth/login
+    Note over User,API: Body: { email, password }
+    
+    API->>AuthCtrl: login(req, res)
+    AuthCtrl->>AuthService: loginUser(email, password)
+    
+    AuthService->>Prisma: prisma.customer.findUnique({ where: { email } })
+    Prisma->>DB: SELECT * FROM customers WHERE email = ?
+    
+    alt Customer non trouvé
+        DB-->>Prisma: null
+        Prisma-->>AuthService: null
+        AuthService-->>AuthCtrl: InvalidCredentialsError
+        AuthCtrl-->>User: 401 Unauthorized
+    else Customer trouvé
+        DB-->>Prisma: Customer with hashed password
+        Prisma-->>AuthService: Customer object
+        
+        AuthService->>Bcrypt: compare(password, hashedPassword)
+        
+        alt Mot de passe incorrect
+            Bcrypt-->>AuthService: false
+            AuthService-->>AuthCtrl: InvalidCredentialsError
+            AuthCtrl-->>User: 401 Unauthorized
+        else Mot de passe correct
+            Bcrypt-->>AuthService: true
+            
+            AuthService->>JWT: sign({ userId, email }, SECRET, { expiresIn: '7d' })
+            JWT-->>AuthService: token
+            
+            AuthService-->>AuthCtrl: { customer, token }
+            AuthCtrl-->>User: 200 OK + { customer, token }
+        end
+    end
+    end
+
+    rect rgb(220, 250, 220)
+    Note over User,DB: ACCÈS ROUTE PROTÉGÉE
+    User->>API: GET /api/orders/my-orders
+    Note over User,API: Header: Authorization: Bearer <token>
+    
+    API->>AuthCtrl: authMiddleware(req, res, next)
+    AuthCtrl->>JWT: verify(token, SECRET)
+    
+    alt Token invalide/expiré
+        JWT-->>AuthCtrl: JsonWebTokenError
+        AuthCtrl-->>User: 401 Unauthorized
+    else Token valide
+        JWT-->>AuthCtrl: decoded { userId, email }
+        AuthCtrl->>Prisma: prisma.customer.findUnique({ where: { id: userId } })
+        Prisma->>DB: SELECT * FROM customers WHERE id = ?
+        DB-->>Prisma: Customer data
+        Prisma-->>AuthCtrl: Customer object
+        
+        Note over AuthCtrl: req.user = customer
+        AuthCtrl->>API: next()
+        API->>API: Route handler exécuté
+        API-->>User: 200 OK + Orders data
+    end
+    end

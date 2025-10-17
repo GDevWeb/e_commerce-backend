@@ -1,9 +1,18 @@
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
+import path from "path";
 import { PrismaClient } from "./generated/prisma";
+import { errorHandler } from "./middlewares/errorHandler";
+import { configureSecurityMiddlewares } from "./middlewares/security";
+import authRouter from "./routes/auth.routes";
 import brandRouter from "./routes/brand.routes";
 import categoryRouter from "./routes/category.routes";
+import customerRouter from "./routes/customer.routes";
+import orderRouter from "./routes/order.routes";
+import orderItemRouter from "./routes/orderItem.routes";
 import productRouter from "./routes/product.routes";
+import reviewRouter from "./routes/review.routes";
+import logger from "./utils/logger";
 
 dotenv.config();
 
@@ -11,15 +20,28 @@ const server = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 
-server.use(express.json());
+// helmet
+configureSecurityMiddlewares(server);
 
-server.use("/api/product", productRouter);
-server.use("/api/category", categoryRouter);
-server.use("/api/brand", brandRouter);
+server.use(express.json());
+server.use(express.urlencoded({ extended: true }));
+
+server.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
+server.use("/api/categories", categoryRouter);
+server.use("/api/brands", brandRouter);
+server.use("/api/products", productRouter);
+server.use("/api/customers", customerRouter);
+server.use("/api/orders", orderRouter);
+server.use("/api/orderItems", orderItemRouter);
+server.use("/api/reviews", reviewRouter);
+server.use("/api/auth", authRouter);
 
 server.get("/", (req: Request, res: Response) => {
-  res.status(200).send("Data Dashboard API is running");
+  res.status(200).send("e_commerce API is running");
 });
+
+server.use(errorHandler);
 
 async function main() {
   try {
@@ -27,7 +49,7 @@ async function main() {
     console.log(`Successfully connected to the database`);
 
     server.listen(PORT, () => {
-      console.log(`Server is listening on: "http://localhost:${PORT}"`);
+      logger.info(`Server is listening on: "http://localhost:${PORT}"`);
     });
   } catch (error) {
     console.error("Failed to connect to the database", error);
@@ -36,5 +58,3 @@ async function main() {
 }
 
 main();
-
-// init repo2

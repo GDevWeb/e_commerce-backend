@@ -1,0 +1,57 @@
+sequenceDiagram
+    actor Customer
+    participant API as Express API
+    participant AuthMW as Auth Middleware
+    participant Controller as ReviewController
+    participant Service as ReviewService
+    participant OrderService as OrderService
+    participant Prisma as Prisma ORM
+    participant DB as PostgreSQL
+
+    Customer->>API: POST /api/products/:productId/reviews
+    Note over Customer,API: Body: { rating: 5, comment: "Excellent!" }
+    
+    API->>AuthMW: Verify JWT Token
+    alt Token invalide
+        AuthMW-->>Customer: 401 Unauthorized
+    else Token valide
+        AuthMW->>Controller: createReview(req, res)
+        Note over Controller: Extract: productId, customerId (from token)
+        
+        Controller->>Service: createReview(reviewData)
+        
+        Service->>OrderService: hasCustomerBoughtProduct(customerId, productId)
+        OrderService->>Prisma: prisma.orderItem.findFirst({ where: {...} })
+        Prisma->>DB: SELECT * FROM order_items WHERE product_id = ? AND order_id IN (...)
+        
+        alt Client n'a pas acheté le produit
+            DB-->>Prisma: null
+            Prisma-->>OrderService: null
+            OrderService-->>Service: false
+            Service-->>Controller: NotEligibleError
+            Controller-->>Customer: 403 Forbidden (Vous devez acheter le produit)
+        else Client a acheté le produit
+            DB-->>Prisma: OrderItem found
+            Prisma-->>OrderService: OrderItem
+            OrderService-->>Service: true
+            
+            Service->>Prisma: prisma.review.findFirst({ where: { customer_id, product_id } })
+            Prisma->>DB: SELECT * FROM reviews WHERE customer_id = ? AND product_id = ?
+            
+            alt Avis existe déjà
+                DB-->>Prisma: Review found
+                Prisma-->>Service: Review exists
+                Service-->>Controller: AlreadyReviewedError
+                Controller-->>Customer: 409 Conflict (Avis déjà posté)
+            else Pas d'avis existant
+                DB-->>Prisma: null
+                
+                Service->>Prisma: prisma.review.create({ data: {...} })
+                Prisma->>DB: INSERT INTO reviews (product_id, customer_id, rating, comment)
+                DB-->>Prisma: Review created (id: 1)
+                Prisma-->>Service: Review object
+                Service-->>Controller: Review object
+                Controller-->>Customer: 201 Created + Review data
+            end
+        end
+    end

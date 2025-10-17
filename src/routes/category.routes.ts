@@ -6,17 +6,22 @@ import {
   getCategory,
   updateCategory,
 } from "../controllers/category.controller";
+import { validate } from "../middlewares/validate";
+import {
+  createCategorySchema,
+  updateCategorySchema,
+} from "../schemas/category.schema";
 
 const categoryRouter = express.Router();
 
 categoryRouter.get("/", getAllCategories);
 
-categoryRouter.get("/:categoryId", getCategory);
+categoryRouter.get("/:id", getCategory);
 
-categoryRouter.post("/", createCategory);
+categoryRouter.post("/", validate(createCategorySchema), createCategory);
 
-categoryRouter.delete("/:categoryId", deleteCategory);
+categoryRouter.patch("/:id", validate(updateCategorySchema), updateCategory);
 
-categoryRouter.put("/:categoryId", updateCategory);
+categoryRouter.delete("/:id", deleteCategory);
 
 export default categoryRouter;

@@ -141,3 +141,9 @@ vite.config.ts.timestamp-*
 /organization_project
 roadmap.md
 todo.md
+
+# env
+uploads
+
+#personal notes
+/personal

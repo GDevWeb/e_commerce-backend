@@ -1,0 +1,157 @@
+sequenceDiagram
+    actor User
+    participant Frontend as Frontend App
+    participant API as Express API
+    participant AuthMW as Auth Middleware (Optional)
+    participant Controller as CartController
+    participant Service as CartService
+    participant Redis as Redis Cache
+    participant Prisma as Prisma ORM
+    participant DB as PostgreSQL
+
+    rect rgb(200, 220, 250)
+    Note over User,DB: AJOUTER AU PANIER
+    User->>Frontend: Click "Ajouter au panier"
+    Frontend->>API: POST /api/cart/items
+    Note over Frontend,API: Body: { product_id: 1, quantity: 2 }<br/>Cookie: session_id OR JWT token
+    
+    API->>AuthMW: Check authentication (optional)
+    
+    alt Utilisateur connecté
+        AuthMW->>Controller: addToCart(req, res) [user_id from token]
+        Note over Controller: cartKey = "cart:user:123"
+    else Utilisateur anonyme
+        AuthMW->>Controller: addToCart(req, res) [session_id from cookie]
+        Note over Controller: cartKey = "cart:session:abc123"
+    end
+    
+    Controller->>Service: addItem(cartKey, productId, quantity)
+    
+    Service->>Prisma: prisma.product.findUnique({ where: { id } })
+    Prisma->>DB: SELECT * FROM products WHERE id = ?
+    
+    alt Produit non trouvé
+        DB-->>Prisma: null
+        Prisma-->>Service: null
+        Service-->>Controller: ProductNotFoundError
+        Controller-->>Frontend: 404 Not Found
+    else Produit trouvé
+        DB-->>Prisma: Product data
+        Prisma-->>Service: Product object
+        
+        Service->>Service: checkStockAvailability(product, quantity)
+        
+        alt Stock insuffisant
+            Service-->>Controller: OutOfStockError
+            Controller-->>Frontend: 400 Bad Request (Stock: 1, Demandé: 2)
+        else Stock OK
+            Service->>Redis: GET cartKey
+            Redis-->>Service: Current cart data (JSON)
+            
+            Service->>Service: updateCartItems(cart, product, quantity)
+            Note over Service: Ajoute ou met à jour item<br/>Recalcule le total
+            
+            Service->>Redis: SET cartKey cartData EX 604800
+            Note over Redis: Expiration: 7 jours
+            Redis-->>Service: OK
+            
+            Service-->>Controller: Updated cart
+            Controller-->>Frontend: 200 OK + { cart, total }
+            Frontend-->>User: Badge panier mis à jour
+        end
+    end
+    end
+
+    rect rgb(250, 220, 200)
+    Note over User,DB: VOIR LE PANIER
+    User->>Frontend: Navigate to /cart
+    Frontend->>API: GET /api/cart
+    
+    API->>Controller: getCart(req, res)
+    Controller->>Service: getCart(cartKey)
+    
+    Service->>Redis: GET cartKey
+    
+    alt Panier vide ou expiré
+        Redis-->>Service: null
+        Service-->>Controller: Empty cart
+        Controller-->>Frontend: 200 OK + { items: [], total: 0 }
+    else Panier existe
+        Redis-->>Service: Cart data
+        
+        Service->>Prisma: prisma.product.findMany({ where: { id: { in: productIds } } })
+        Note over Service,Prisma: Récupère les données fraîches des produits
+        Prisma->>DB: SELECT * FROM products WHERE id IN (1, 2, 3)
+        DB-->>Prisma: Products data
+        Prisma-->>Service: Products array
+        
+        Service->>Service: enrichCartWithProductData(cart, products)
+        Service->>Service: validateStockAndPrices(cart, products)
+        Note over Service: Vérifie si prix/stock ont changé
+        
+        alt Changements détectés
+            Service->>Service: updateCartWithLatestData(cart)
+            Service->>Redis: SET cartKey updatedCart EX 604800
+        end
+        
+        Service-->>Controller: Enriched cart
+        Controller-->>Frontend: 200 OK + { items, total, warnings }
+        Frontend-->>User: Affichage panier avec alertes si nécessaire
+    end
+    end
+
+    rect rgb(220, 250, 220)
+    Note over User,DB: PASSER COMMANDE (Checkout)
+    User->>Frontend: Click "Commander"
+    Frontend->>API: POST /api/cart/checkout
+    
+    API->>AuthMW: Verify JWT Token
+    alt Non authentifié
+        AuthMW-->>Frontend: 401 Unauthorized
+        Frontend-->>User: Redirect to /login
+    else Authentifié
+        AuthMW->>Controller: checkout(req, res)
+        
+        Controller->>Service: checkoutCart(userId)
+        Service->>Redis: GET cart:user:123
+        Redis-->>Service: Cart data
+        
+        Service->>Service: validateCartBeforeCheckout(cart)
+        
+        Service->>Prisma: prisma.$transaction([...])
+        Note over Prisma,DB: Transaction START
+        
+        loop Pour chaque item
+            Prisma->>DB: SELECT * FROM products WHERE id = ? FOR UPDATE
+            Note over DB: Row lock pour éviter overselling
+            DB-->>Prisma: Product (locked)
+            
+            alt Stock insuffisant
+                Prisma-->>Service: Transaction rollback
+                Service-->>Controller: OutOfStockError
+                Controller-->>Frontend: 400 Bad Request
+            end
+        end
+        
+        Prisma->>DB: INSERT INTO orders (customer_id, total, status)
+        DB-->>Prisma: Order created
+        
+        loop Pour chaque item
+            Prisma->>DB: INSERT INTO order_items (...)
+            Prisma->>DB: UPDATE products SET stock_quantity = stock_quantity - ?
+        end
+        
+        Prisma->>DB: UPDATE customers SET total_orders++, total_spent += total
+        
+        Note over Prisma,DB: Transaction COMMIT
+        Prisma-->>Service: Order created successfully
+        
+        Service->>Redis: DEL cart:user:123
+        Note over Redis: Vider le panier
+        Redis-->>Service: OK
+        
+        Service-->>Controller: Order data
+        Controller-->>Frontend: 201 Created + Order
+        Frontend-->>User: Redirect to /orders/123 (confirmation)
+    end
+    end

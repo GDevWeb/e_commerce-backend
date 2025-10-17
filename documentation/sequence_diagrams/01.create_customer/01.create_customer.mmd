@@ -1,0 +1,37 @@
+sequenceDiagram
+    actor Client
+    participant API as Express API
+    participant Controller as CustomerController
+    participant Validator as Validation Layer
+    participant Service as CustomerService
+    participant Prisma as Prisma ORM
+    participant DB as PostgreSQL
+
+    Client->>API: POST /api/customers
+    Note over Client,API: Body: { first_name, last_name, email, ... }
+    
+    API->>Controller: createCustomer(req, res)
+    
+    Controller->>Validator: Validate req.body
+    alt Validation échoue
+        Validator-->>Controller: ValidationError
+        Controller-->>Client: 400 Bad Request
+    else Validation OK
+        Validator-->>Controller: Valid data
+        
+        Controller->>Service: createCustomer(data)
+        Service->>Prisma: prisma.customer.create({ data })
+        Prisma->>DB: INSERT INTO customers (...)
+        
+        alt Email déjà existant
+            DB-->>Prisma: Unique constraint violation
+            Prisma-->>Service: PrismaError P2002
+            Service-->>Controller: Error
+            Controller-->>Client: 409 Conflict
+        else Création réussie
+            DB-->>Prisma: Customer créé (id: 1)
+            Prisma-->>Service: Customer object
+            Service-->>Controller: Customer object
+            Controller-->>Client: 201 Created + Customer data
+        end
+    end

@@ -98,6 +98,7 @@ exports.Prisma.CustomerScalarFieldEnum = {
   last_name: 'last_name',
   date_of_birth: 'date_of_birth',
   email: 'email',
+  password: 'password',
   phone_number: 'phone_number',
   address: 'address',
   is_active: 'is_active',
@@ -106,17 +107,30 @@ exports.Prisma.CustomerScalarFieldEnum = {
   total_spent: 'total_spent',
   customer_type: 'customer_type',
   preferred_contact_method: 'preferred_contact_method',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.RefreshTokenScalarFieldEnum = {
+  id: 'id',
+  token: 'token',
+  userId: 'userId',
+  expiresAt: 'expiresAt',
   createdAt: 'createdAt'
 };
 
 exports.Prisma.BrandScalarFieldEnum = {
   id: 'id',
-  name: 'name'
+  name: 'name',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.CategoryScalarFieldEnum = {
   id: 'id',
-  name: 'name'
+  name: 'name',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.ProductScalarFieldEnum = {
@@ -126,20 +140,32 @@ exports.Prisma.ProductScalarFieldEnum = {
   imageUrl: 'imageUrl',
   description: 'description',
   weight: 'weight',
+  price: 'price',
+  stock_quantity: 'stock_quantity',
   category_id: 'category_id',
   brand_id: 'brand_id',
-  price: 'price',
-  stock_quantity: 'stock_quantity'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.OrderScalarFieldEnum = {
   id: 'id',
-  product_id: 'product_id',
   customer_id: 'customer_id',
   order_date: 'order_date',
+  status: 'status',
+  total: 'total',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.OrderItemScalarFieldEnum = {
+  id: 'id',
+  order_id: 'order_id',
+  product_id: 'product_id',
   quantity: 'quantity',
   price: 'price',
-  order_status: 'order_status'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.ReviewScalarFieldEnum = {
@@ -147,8 +173,9 @@ exports.Prisma.ReviewScalarFieldEnum = {
   product_id: 'product_id',
   customer_id: 'customer_id',
   rating: 'rating',
-  comments: 'comments',
-  createdAt: 'createdAt'
+  comment: 'comment',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -165,14 +192,38 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
+exports.CustomerType = exports.$Enums.CustomerType = {
+  STANDARD: 'STANDARD',
+  SILVER: 'SILVER',
+  GOLD: 'GOLD',
+  PLATINUM: 'PLATINUM',
+  VIP: 'VIP'
+};
 
+exports.ContactMethod = exports.$Enums.ContactMethod = {
+  EMAIL: 'EMAIL',
+  PHONE: 'PHONE',
+  SMS: 'SMS',
+  WHATSAPP: 'WHATSAPP'
+};
+
+exports.OrderStatus = exports.$Enums.OrderStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  SHIPPED: 'SHIPPED',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED',
+  REFUNDED: 'REFUNDED'
+};
 
 exports.Prisma.ModelName = {
   Customer: 'Customer',
+  RefreshToken: 'RefreshToken',
   Brand: 'Brand',
   Category: 'Category',
   Product: 'Product',
   Order: 'Order',
+  OrderItem: 'OrderItem',
   Review: 'Review'
 };
 /**
@@ -222,13 +273,13 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Customer {\n  id                       Int      @id @default(autoincrement())\n  first_name               String\n  last_name                String\n  date_of_birth            DateTime\n  email                    String   @unique\n  phone_number             String\n  address                  String\n  is_active                Boolean  @default(true)\n  last_purchase_date       DateTime\n  total_orders             Int\n  total_spent              Float\n  customer_type            String\n  preferred_contact_method String\n  createdAt                DateTime @default(now())\n  orders                   Order[]\n  reviews                  Review[]\n}\n\nmodel Brand {\n  id       Int       @id @default(autoincrement())\n  name     String    @unique\n  products Product[]\n}\n\nmodel Category {\n  id       Int       @id @default(autoincrement())\n  name     String    @unique\n  products Product[]\n}\n\nmodel Product {\n  id             Int      @id @default(autoincrement())\n  name           String\n  sku            String   @unique //stock keeping unit\n  imageUrl       String?\n  description    String?\n  weight         Float?\n  category_id    Int\n  brand_id       Int      @default(1)\n  price          Float\n  stock_quantity Int\n  category       Category @relation(fields: [category_id], references: [id])\n  brand          Brand    @relation(fields: [brand_id], references: [id])\n  orders         Order[]\n  reviews        Review[]\n}\n\nmodel Order {\n  id           Int      @id @default(autoincrement())\n  product_id   Int\n  customer_id  Int\n  order_date   DateTime\n  quantity     Int\n  price        Float\n  order_status String\n  product      Product  @relation(fields: [product_id], references: [id])\n  customer     Customer @relation(fields: [customer_id], references: [id])\n}\n\nmodel Review {\n  id          Int      @id @default(autoincrement())\n  product_id  Int\n  customer_id Int\n  rating      Int\n  comments    String\n  createdAt   DateTime @default(now())\n  product     Product  @relation(fields: [product_id], references: [id])\n  customer    Customer @relation(fields: [customer_id], references: [id])\n}\n",
-  "inlineSchemaHash": "f78672265f5633ddd3373b46d0805a1bf9b20a701d7b4586d62c46fdad40c460",
+  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\n// ===== ENUMS =====\n\nenum CustomerType {\n  STANDARD\n  SILVER\n  GOLD\n  PLATINUM\n  VIP\n}\n\nenum ContactMethod {\n  EMAIL\n  PHONE\n  SMS\n  WHATSAPP\n}\n\n// === 14/10/25 - Change for String ===\n// enum CategoryType {\n//   ELECTRONICS\n//   CLOTHING\n//   BOOKS\n//   HOME_APPLIANCES\n//   SPORTS\n//   OUTDOORS\n//   TOYS\n//   GAMES\n//   FOOD\n//   DRINKS\n//   HEALTH\n//   BEAUTY\n//   AUTOMOTIVE\n//   INDUSTRIAL\n// }\n\nenum OrderStatus {\n  PENDING\n  PROCESSING\n  SHIPPED\n  DELIVERED\n  CANCELLED\n  REFUNDED\n}\n\n// ===== MODELS =====\n\nmodel Customer {\n  id                       Int            @id @default(autoincrement())\n  first_name               String\n  last_name                String\n  date_of_birth            DateTime?\n  email                    String         @unique\n  password                 String? //Temporary added 15102025 - Schedule splitting Customer AND User session 14 RBAC\n  phone_number             String?\n  address                  String?\n  is_active                Boolean        @default(true)\n  last_purchase_date       DateTime?\n  total_orders             Int            @default(0)\n  total_spent              Float          @default(0)\n  customer_type            CustomerType   @default(STANDARD)\n  preferred_contact_method ContactMethod  @default(EMAIL)\n  createdAt                DateTime       @default(now())\n  updatedAt                DateTime       @updatedAt\n  orders                   Order[]\n  reviews                  Review[]\n  RefreshToken             RefreshToken[]\n\n  @@map(\"customers\")\n}\n\nmodel RefreshToken {\n  id        Int      @id @default(autoincrement())\n  token     String   @unique\n  user      Customer @relation(fields: [userId], references: [id], onDelete: Cascade)\n  userId    Int\n  expiresAt DateTime\n  createdAt DateTime @default(now())\n}\n\nmodel Brand {\n  id        Int       @id @default(autoincrement())\n  name      String    @unique\n  createdAt DateTime  @default(now())\n  updatedAt DateTime  @updatedAt\n  products  Product[]\n\n  @@map(\"brands\")\n}\n\nmodel Category {\n  id        Int       @id @default(autoincrement())\n  name      String    @unique\n  createdAt DateTime  @default(now())\n  updatedAt DateTime  @updatedAt\n  products  Product[]\n\n  @@map(\"categories\")\n}\n\nmodel Product {\n  id             Int         @id @default(autoincrement())\n  name           String\n  sku            String      @unique\n  imageUrl       String?\n  description    String?\n  weight         Float?\n  price          Float\n  stock_quantity Int         @default(0)\n  category_id    Int\n  brand_id       Int\n  createdAt      DateTime    @default(now())\n  updatedAt      DateTime    @updatedAt\n  category       Category    @relation(fields: [category_id], references: [id], onDelete: Cascade)\n  brand          Brand       @relation(fields: [brand_id], references: [id], onDelete: Cascade)\n  orderItems     OrderItem[]\n  reviews        Review[]\n\n  @@index([category_id])\n  @@index([brand_id])\n  @@index([sku])\n  @@map(\"products\")\n}\n\nmodel Order {\n  id          Int         @id @default(autoincrement())\n  customer_id Int\n  order_date  DateTime    @default(now())\n  status      OrderStatus @default(PENDING)\n  total       Float\n  createdAt   DateTime    @default(now())\n  updatedAt   DateTime    @updatedAt\n  customer    Customer    @relation(fields: [customer_id], references: [id], onDelete: Cascade)\n  orderItems  OrderItem[]\n\n  @@index([customer_id])\n  @@index([order_date])\n  @@map(\"orders\")\n}\n\nmodel OrderItem {\n  id         Int      @id @default(autoincrement())\n  order_id   Int\n  product_id Int\n  quantity   Int\n  price      Float\n  createdAt  DateTime @default(now())\n  updatedAt  DateTime @updatedAt\n  order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)\n  product    Product  @relation(fields: [product_id], references: [id], onDelete: Restrict)\n\n  @@index([order_id])\n  @@index([product_id])\n  @@map(\"order_items\")\n}\n\nmodel Review {\n  id          Int      @id @default(autoincrement())\n  product_id  Int\n  customer_id Int\n  rating      Int\n  comment     String?\n  createdAt   DateTime @default(now())\n  updatedAt   DateTime @updatedAt\n  product     Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)\n  customer    Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)\n\n  @@index([product_id])\n  @@index([customer_id])\n  @@map(\"reviews\")\n}\n",
+  "inlineSchemaHash": "fae73d847ce20fa23bbe5e3ba1e04cb9773ab3b248ba2c4336b465437ac8b37b",
   "copyEngine": true
 }
 config.dirname = '/'
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"Customer\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"first_name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"last_name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"date_of_birth\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"phone_number\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"address\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"is_active\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"last_purchase_date\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"total_orders\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"total_spent\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"customer_type\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"preferred_contact_method\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"orders\",\"kind\":\"object\",\"type\":\"Order\",\"relationName\":\"CustomerToOrder\"},{\"name\":\"reviews\",\"kind\":\"object\",\"type\":\"Review\",\"relationName\":\"CustomerToReview\"}],\"dbName\":null},\"Brand\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"products\",\"kind\":\"object\",\"type\":\"Product\",\"relationName\":\"BrandToProduct\"}],\"dbName\":null},\"Category\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"products\",\"kind\":\"object\",\"type\":\"Product\",\"relationName\":\"CategoryToProduct\"}],\"dbName\":null},\"Product\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"sku\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"imageUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"weight\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"category_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"brand_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"price\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"stock_quantity\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"category\",\"kind\":\"object\",\"type\":\"Category\",\"relationName\":\"CategoryToProduct\"},{\"name\":\"brand\",\"kind\":\"object\",\"type\":\"Brand\",\"relationName\":\"BrandToProduct\"},{\"name\":\"orders\",\"kind\":\"object\",\"type\":\"Order\",\"relationName\":\"OrderToProduct\"},{\"name\":\"reviews\",\"kind\":\"object\",\"type\":\"Review\",\"relationName\":\"ProductToReview\"}],\"dbName\":null},\"Order\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"product_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"customer_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"order_date\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"quantity\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"price\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"order_status\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"product\",\"kind\":\"object\",\"type\":\"Product\",\"relationName\":\"OrderToProduct\"},{\"name\":\"customer\",\"kind\":\"object\",\"type\":\"Customer\",\"relationName\":\"CustomerToOrder\"}],\"dbName\":null},\"Review\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"product_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"customer_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"rating\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"comments\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"product\",\"kind\":\"object\",\"type\":\"Product\",\"relationName\":\"ProductToReview\"},{\"name\":\"customer\",\"kind\":\"object\",\"type\":\"Customer\",\"relationName\":\"CustomerToReview\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"Customer\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"first_name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"last_name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"date_of_birth\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"password\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"phone_number\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"address\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"is_active\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"last_purchase_date\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"total_orders\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"total_spent\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"customer_type\",\"kind\":\"enum\",\"type\":\"CustomerType\"},{\"name\":\"preferred_contact_method\",\"kind\":\"enum\",\"type\":\"ContactMethod\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"orders\",\"kind\":\"object\",\"type\":\"Order\",\"relationName\":\"CustomerToOrder\"},{\"name\":\"reviews\",\"kind\":\"object\",\"type\":\"Review\",\"relationName\":\"CustomerToReview\"},{\"name\":\"RefreshToken\",\"kind\":\"object\",\"type\":\"RefreshToken\",\"relationName\":\"CustomerToRefreshToken\"}],\"dbName\":\"customers\"},\"RefreshToken\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"token\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"Customer\",\"relationName\":\"CustomerToRefreshToken\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"expiresAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null},\"Brand\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"products\",\"kind\":\"object\",\"type\":\"Product\",\"relationName\":\"BrandToProduct\"}],\"dbName\":\"brands\"},\"Category\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"products\",\"kind\":\"object\",\"type\":\"Product\",\"relationName\":\"CategoryToProduct\"}],\"dbName\":\"categories\"},\"Product\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"sku\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"imageUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"weight\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"price\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"stock_quantity\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"category_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"brand_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"category\",\"kind\":\"object\",\"type\":\"Category\",\"relationName\":\"CategoryToProduct\"},{\"name\":\"brand\",\"kind\":\"object\",\"type\":\"Brand\",\"relationName\":\"BrandToProduct\"},{\"name\":\"orderItems\",\"kind\":\"object\",\"type\":\"OrderItem\",\"relationName\":\"OrderItemToProduct\"},{\"name\":\"reviews\",\"kind\":\"object\",\"type\":\"Review\",\"relationName\":\"ProductToReview\"}],\"dbName\":\"products\"},\"Order\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"customer_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"order_date\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"status\",\"kind\":\"enum\",\"type\":\"OrderStatus\"},{\"name\":\"total\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"customer\",\"kind\":\"object\",\"type\":\"Customer\",\"relationName\":\"CustomerToOrder\"},{\"name\":\"orderItems\",\"kind\":\"object\",\"type\":\"OrderItem\",\"relationName\":\"OrderToOrderItem\"}],\"dbName\":\"orders\"},\"OrderItem\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"order_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"product_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"quantity\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"price\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"order\",\"kind\":\"object\",\"type\":\"Order\",\"relationName\":\"OrderToOrderItem\"},{\"name\":\"product\",\"kind\":\"object\",\"type\":\"Product\",\"relationName\":\"OrderItemToProduct\"}],\"dbName\":\"order_items\"},\"Review\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"product_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"customer_id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"rating\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"comment\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"product\",\"kind\":\"object\",\"type\":\"Product\",\"relationName\":\"ProductToReview\"},{\"name\":\"customer\",\"kind\":\"object\",\"type\":\"Customer\",\"relationName\":\"CustomerToReview\"}],\"dbName\":\"reviews\"}},\"enums\":{},\"types\":{}}")
 defineDmmfProperty(exports.Prisma, config.runtimeDataModel)
 config.engineWasm = {
   getRuntime: async () => require('./query_engine_bg.js'),
