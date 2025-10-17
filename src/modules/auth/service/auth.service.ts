@@ -152,14 +152,17 @@ export const saveRefreshToken = async (
 ): Promise<void> => {
   /*Calculate the expiration date*/
   //  1. retrieving the JWT_REFRESH_EXPIRES_IN from env ("30d" for example)
-  const expirationDate = (process.env.BCRYPT_ROUNDS as string) || "30d";
-  console.info("expirationDate:", expirationDate);
+  const jwtRefreshExpiresIn = (process.env.BCRYPT_ROUNDS as string) || "30d";
+  console.info("jwtRefreshExpiresIn:", jwtRefreshExpiresIn);
+  // 1.2
+  let expiresIn: string = jwtRefreshExpiresIn.slice(0, -1); // Remove the 'd' from "30d"
+  console.info("expiresIn:", expiresIn);
   // 2. Convert in timestamp (now + 30 days)
   const timestamp = new Date(
-    Date.now() + parseInt(expirationDate) * 24 * 60 * 60 * 100
+    Date.now() + parseInt(expiresIn) * 24 * 60 * 60 * 100
   );
   console.info("timestamp:", timestamp);
-  // 3. Create an DateObject
+  // 3. Create a DateObject
   const expiresAt = new Date(timestamp);
   console.info("expireAt:", expiresAt);
   /*Storing in the DB*/
