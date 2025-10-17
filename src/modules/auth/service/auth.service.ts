@@ -19,6 +19,7 @@ dotenv.config();
 
 const prisma = new PrismaClient();
 const BCRYPT_ROUNDS = process.env.BCRYPT_ROUNDS as string;
+console.log(BCRYPT_ROUNDS);
 
 export const register = async (input: RegisterInput): Promise<AuthResponse> => {
   try {
@@ -35,6 +36,9 @@ export const register = async (input: RegisterInput): Promise<AuthResponse> => {
 
     const accessToken = generateAccessToken(newUser.id, newUser.email);
     const refreshToken = generateRefreshToken(newUser.id);
+
+    // Storing refresh token in DB
+    await saveRefreshToken(newUser.id, refreshToken);
 
     return {
       accessToken,
@@ -76,6 +80,11 @@ export const login = async (input: LoginInput): Promise<AuthResponse> => {
 
   const accessToken = generateAccessToken(user.id, user.email);
   const refreshToken = generateRefreshToken(user.id);
+
+  // Optional but important fro security Deleting the older tokens
+  await prisma.refreshToken.deleteMany({ where: { id: user.id } });
+  // Limiting the number of active sessions
+  await saveRefreshToken(user.id, refreshToken);
 
   return {
     accessToken,
@@ -135,4 +144,32 @@ export const updateProfile = async (
   });
 
   return updatedUser;
+};
+
+export const saveRefreshToken = async (
+  userId: number,
+  token: string
+): Promise<void> => {
+  /*Calculate the expiration date*/
+  //  1. retrieving the JWT_REFRESH_EXPIRES_IN from env ("30d" for example)
+  const expirationDate = (process.env.BCRYPT_ROUNDS as string) || "30d";
+  console.info("expirationDate:", expirationDate);
+  // 2. Convert in timestamp (now + 30 days)
+  const timestamp = new Date(
+    Date.now() + parseInt(expirationDate) * 24 * 60 * 60 * 100
+  );
+  console.info("timestamp:", timestamp);
+  // 3. Create an DateObject
+  const expiresAt = new Date(timestamp);
+  console.info("expireAt:", expiresAt);
+  /*Storing in the DB*/
+  //  1. prisma.refreshToken.create()
+  await prisma.refreshToken.create({
+    // 2. data: token, userId, expireAt
+    data: {
+      token: token,
+      userId: userId,
+      expiresAt: expiresAt,
+    },
+  });
 };
