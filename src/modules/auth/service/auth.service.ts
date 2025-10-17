@@ -172,61 +172,64 @@ export const saveRefreshToken = async (
 export const refreshTokenAccess = async (
   refreshToken: string
 ): Promise<{ accessToken: string; refreshToken?: string }> => {
-  /*STEP 1: Verify token exists in DB */
-  const existingRefreshToken = await prisma.refreshToken.findUnique({
-    where: { token: refreshToken },
-  });
+  try {
+    const decoded = verifyToken(refreshToken, true);
 
-  if (!existingRefreshToken) {
-    throw new UnauthorizedError("Invalid refresh token");
-  }
-
-  /*STEP 2: Check expiration*/
-  if (existingRefreshToken.expiresAt.getTime() < Date.now()) {
-    await prisma.refreshToken.delete({
+    const existingRefreshToken = await prisma.refreshToken.findUnique({
       where: { token: refreshToken },
     });
-    throw new UnauthorizedError("Refresh token expired");
+
+    if (!existingRefreshToken) {
+      console.error("❌ Token not found in database");
+      throw new UnauthorizedError("Refresh token already used or revoked");
+    }
+
+    const storedToken = existingRefreshToken.expiresAt;
+    const today = new Date();
+
+    console.log("🔍 Token expiration check:", {
+      expiresAt: storedToken,
+      now: today,
+      isExpired: storedToken.getTime() < today.getTime(),
+    });
+
+    if (storedToken.getTime() < today.getTime()) {
+      console.error("❌ Token expired (Database)");
+      await prisma.refreshToken.delete({
+        where: { token: refreshToken },
+      });
+      throw new UnauthorizedError("Refresh token expired (DB-check)");
+    }
+
+    const existingUser = await prisma.customer.findUnique({
+      where: { id: decoded.userId },
+    });
+
+    if (!existingUser) {
+      console.error("❌ User not found:", decoded.userId);
+      throw new UnauthorizedError("User linked to refresh token not found");
+    }
+
+    const newAccessToken = generateAccessToken(
+      existingUser.id,
+      existingUser.email
+    );
+    await prisma.refreshToken.delete({ where: { token: refreshToken } });
+    const newRefreshToken = generateRefreshToken(existingUser.id);
+    await saveRefreshToken(existingUser.id, newRefreshToken);
+
+    console.log("✅ Token refresh successful for user:", existingUser.id);
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    };
+  } catch (error) {
+    console.error("❌ refreshTokenAccess error:", error);
+
+    if ((error as any).isOperational === true) {
+      throw error;
+    }
+    throw new UnauthorizedError("Invalid refresh token (unforeseen issue)");
   }
-
-  /*STEP 3: Verify JWT signature */
-  const decoded = verifyToken(refreshToken, true);
-
-  /*STEP 4: Validate user */
-  const existingUser = await prisma.customer.findUnique({
-    where: { id: decoded.userId },
-  });
-
-  if (!existingUser) {
-    throw new UnauthorizedError("User not found");
-  }
-
-  /*STEP 5: Generate new access token*/
-  const newAccessToken = generateAccessToken(
-    existingUser.id,
-    existingUser.email
-  );
-
-  /*STEP 6: Token Rotation */
-  await prisma.refreshToken.delete({
-    where: { token: refreshToken },
-  });
-
-  const newRefreshToken = generateRefreshToken(existingUser.id);
-  await saveRefreshToken(existingUser.id, newRefreshToken);
-
-  return {
-    accessToken: newAccessToken,
-    refreshToken: newRefreshToken,
-  };
 };
-
-/* TODO fix the response for error case 
-actual:
-{
-    "status": "error",
-    "message": "Internal server error"
-}
-
-hint: mistake in my middlewares
-*/
