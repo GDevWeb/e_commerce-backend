@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
+import ms from "ms";
 import { UnauthorizedError } from "../../../errors";
 import { PrismaClient } from "../../../generated/prisma";
 import { UserProfile } from "../../../types/user.types";
@@ -7,13 +8,14 @@ import { handlePrismaError } from "../../../utils/handlePrismaError";
 import {
   generateAccessToken,
   generateRefreshToken,
+  verifyToken,
 } from "../../../utils/jwt.utils";
 import { AuthResponse } from "../authResponse.types";
 import {
   LoginInput,
   RegisterInput,
   UpdateProfileInput,
-} from "../schema/auth.schema";
+} from "../schema/auth.schema"; // Removed unused 'error' import
 
 dotenv.config();
 
@@ -150,29 +152,89 @@ export const saveRefreshToken = async (
   userId: number,
   token: string
 ): Promise<void> => {
-  /*Calculate the expiration date*/
-  //  1. retrieving the JWT_REFRESH_EXPIRES_IN from env ("30d" for example)
-  const jwtRefreshExpiresIn = (process.env.BCRYPT_ROUNDS as string) || "30d";
+  const jwtRefreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "30d";
   console.info("jwtRefreshExpiresIn:", jwtRefreshExpiresIn);
-  // 1.2
-  let expiresIn: string = jwtRefreshExpiresIn.slice(0, -1); // Remove the 'd' from "30d"
-  console.info("expiresIn:", expiresIn);
-  // 2. Convert in timestamp (now + 30 days)
-  const timestamp = new Date(
-    Date.now() + parseInt(expiresIn) * 24 * 60 * 60 * 100
-  );
-  console.info("timestamp:", timestamp);
-  // 3. Create a DateObject
-  const expiresAt = new Date(timestamp);
-  console.info("expireAt:", expiresAt);
-  /*Storing in the DB*/
-  //  1. prisma.refreshToken.create()
+
+  const milliseconds = ms(jwtRefreshExpiresIn as ms.StringValue);
+  const expiresAt = new Date(Date.now() + milliseconds);
+
+  console.info("Saving refresh token, expires at:", expiresAt);
+
   await prisma.refreshToken.create({
-    // 2. data: token, userId, expireAt
     data: {
-      token: token,
-      userId: userId,
-      expiresAt: expiresAt,
+      token,
+      userId,
+      expiresAt,
     },
   });
+};
+
+export const refreshTokenAccess = async (
+  refreshToken: string
+): Promise<{ accessToken: string; refreshToken?: string }> => {
+  /*STEP 1: Verify that the token exists in the DB */
+  // 1. Search in the RefreshToken table
+  const existingRefreshToken = await prisma.refreshToken.findUnique({
+    where: { token: refreshToken },
+  });
+  // 2. If not found: throw UnauthorizedError("Invalid refresh token")
+  if (!existingRefreshToken) {
+    throw new UnauthorizedError("Invalid refresh token");
+  }
+
+  /*STEP 2: Check expiration*/
+  // 3. Compare storedToken.expiresAt with Date.now()
+  const storedToken = existingRefreshToken.expiresAt;
+  console.info("storedToken value:", storedToken);
+
+  const today = new Date(Date.now());
+
+  const compare = storedToken.getTime() < today.getTime();
+  // 4. If expired:
+  if (compare) {
+    //    - Delete the token from the DB (cleanup)
+    await prisma.refreshToken.delete({
+      where: { token: refreshToken },
+    });
+    //    - throw UnauthorizedError("Refresh token expired")
+    throw new UnauthorizedError("Refresh token expired");
+  }
+
+  /*STEP 3: Verify JWT signature */
+  // 5. Call verifyToken(refreshToken, true)
+  try {
+    const isValidToken = verifyToken(refreshToken, true);
+    /*STEP 4: Extract and validate the user */
+    // 7. Extract userId from the JWT payload
+    const user = isValidToken.userId;
+    // 8. Verify that the user still exists
+    const existingUser = await prisma.customer.findUnique({
+      where: { id: user },
+    });
+    // 9. If not found: throw UnauthorizedError("User not found")
+    if (!existingUser) {
+      throw new UnauthorizedError("User not found");
+    }
+    /*STEP 5: Generate a new access token*/
+    // 10. Call generateAccessToken(user.id, user.email)
+    const newAccessToken = generateAccessToken(
+      existingUser.id,
+      existingUser.email
+    );
+
+    //   STEP 6 (OPTIONAL): Token Rotation
+    // 11. Delete the old refresh token
+    await prisma.refreshToken.delete({
+      where: { token: refreshToken },
+    });
+    // 12. Generate a NEW refresh token
+    const newRefreshToken = generateRefreshToken(existingUser.id);
+    // 13. Store the new one
+    await saveRefreshToken(existingUser.id, newRefreshToken);
+    /*STEP 7: Return the tokens*/
+    // 15. With rotation: { accessToken, refreshToken: newRefreshToken }
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  } catch (error) {
+    throw new UnauthorizedError("Invalid refresh token");
+  }
 };
