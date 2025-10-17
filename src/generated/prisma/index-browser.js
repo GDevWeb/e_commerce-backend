@@ -139,6 +139,14 @@ exports.Prisma.CustomerScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.RefreshTokenScalarFieldEnum = {
+  id: 'id',
+  token: 'token',
+  userId: 'userId',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.BrandScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -238,6 +246,7 @@ exports.OrderStatus = exports.$Enums.OrderStatus = {
 
 exports.Prisma.ModelName = {
   Customer: 'Customer',
+  RefreshToken: 'RefreshToken',
   Brand: 'Brand',
   Category: 'Category',
   Product: 'Product',

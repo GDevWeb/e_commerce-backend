@@ -74,8 +74,17 @@ model Customer {
   reviews                  Review[]
 
   @@map("customers")
+  RefreshToken RefreshToken[]
 }
 
+model RefreshToken {
+  id Int @id @default(autoincrement())
+  token String @unique
+  user Customer @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+  expiresAt DateTime 
+  createdAt DateTime @default(now()) 
+}
 model Brand {
   id        Int       @id @default(autoincrement())
   name      String    @unique
