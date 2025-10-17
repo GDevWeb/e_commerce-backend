@@ -220,3 +220,13 @@ export const refreshTokenAccess = async (
     refreshToken: newRefreshToken,
   };
 };
+
+/* TODO fix the response for error case 
+actual:
+{
+    "status": "error",
+    "message": "Internal server error"
+}
+
+hint: mistake in my middlewares
+*/
